@@ -1,6 +1,27 @@
 import numpy as np
 
 
+def find_outliers_per_class_centered_scaled(standardized_features, labels, image_names, threshold=0.2):
+    classes = np.unique(labels)
+    distances = [[] for _ in range(len(classes))]
+    names = [[] for _ in range(len(classes))]
+    for c in classes:
+        indices = labels == c
+        for image, name in zip(standardized_features[indices], image_names[indices]):
+            distance = np.linalg.norm(image)
+            if distance >= threshold:
+                distances[c].append(distance)
+                names[c].append(name)
+
+        distances[c] = np.asarray(distances[c])
+        names[c] = np.asarray(names[c])
+        _sorted = np.argsort(distances[c])[::-1]
+        distances[c] = distances[c][_sorted]
+        names[c] = names[c][_sorted]
+
+    return names, distances
+
+
 def find_outliers_per_class(bow_mean, bow_cov, bow, labels, image_names, threshold=13):
     from scipy.spatial.distance import mahalanobis
     classes = np.unique(labels)
@@ -26,9 +47,11 @@ def find_outliers_per_class(bow_mean, bow_cov, bow, labels, image_names, thresho
     return names, distances
 
 
-def write_discarded_images(names, class_labels, discarded_dir, images_dir):
+def write_discarded_images(names, class_labels, discarded_dir, images_dir, delete_old=True):
     import os
     import shutil
+    if delete_old and os.path.exists(discarded_dir):
+        shutil.rmtree(discarded_dir)
     for c in range(len(names)):
         discarded_subdir = discarded_dir + str(c) + "_" + class_labels[c]
         os.makedirs(discarded_subdir)

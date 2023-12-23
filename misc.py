@@ -54,3 +54,11 @@ def unroll_arrays(arrays_list, sampling_frac=1):
                 if np.random.random() < sampling_frac:
                     result.append(i)
     return np.asarray(result)
+
+
+def center_scale_columns(features, labels):
+    res = features.copy()
+    for c in np.unique(labels):
+        indices = labels == c
+        res[indices] = (res[indices] - res[indices].mean(axis=0)) / res[indices].std(axis=0)
+    return res
