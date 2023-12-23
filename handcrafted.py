@@ -1,8 +1,30 @@
+import cv2
 import cv2 as cv
 import numpy as np
 
 
-def sift(image, max_features=None):
+def lbp(image, distances=None):
+    if distances is None:
+        distances = [2]
+    from skimage.feature import local_binary_pattern
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    patterns = np.zeros((10 * len(distances),))
+    for i in range(len(distances)):
+        pattern = local_binary_pattern(image, 8, distances[i], method="uniform")
+        pattern = np.histogram(pattern.flatten(), bins=10, density=True)[0]
+        for j in range(len(pattern)):
+            patterns[i * 10 + j] = pattern[j]
+    return patterns
+
+
+def sift(image, max_features=None, size=1):
+    center = image.shape
+    w = center[1] * size
+    h = center[0] * size
+    x = center[1] / 2 - w / 2
+    y = center[0] / 2 - h / 2
+
+    image = image[int(y):int(y + h), int(x):int(x + w)]
     detector = cv.SIFT.create(nfeatures=max_features)
     _, features = detector.detectAndCompute(cv.cvtColor(image, cv.COLOR_BGR2GRAY), None)
     return features
@@ -21,8 +43,7 @@ def gabor_response(image, size, angles, sigmas, lambdas, gammas):
 
 
 def color_histograms(image, bins=20, flatten=False):
-    y_cb_cr = cv.cvtColor(image, cv.COLOR_BGR2YCrCb)
-    channels = cv.split(y_cb_cr)
+    channels = cv.split(image)
     histogram = np.zeros(shape=(3, bins))
     for i, channel in enumerate(channels):
         histogram[i] = cv.calcHist([channel], [0], None,
