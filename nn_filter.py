@@ -16,7 +16,7 @@ class NN_filter:
         self.batch_size = batch_size;
         self.model_name = model_name;
 
-        if model_name != 'resnet' and model_name != 'vgg':
+        if model_name != 'resnet' and model_name != 'vgg' and model_name != 'efficient_net':
             raise ValueError("Variable 'model_name' can assume only those values: 'resnet', 'vgg'")
         
         self.model = self.generate_model()
@@ -33,7 +33,13 @@ class NN_filter:
     def generate_model(self, summary = False):
         model = None;
         ## resnet definition
-        if self.model_name == 'resnet':
+        if self.model_name == 'efficient_net':
+            cut_layer_name = 'block7a_se_reduce'
+            base_model = keras.applications.EfficientNetB0(include_top=True, weights='imagenet')
+            self.preprocess_fun = lambda x: keras.applications.efficientnet.preprocess_input(x)
+            model = keras.Model(inputs=base_model.input, outputs=base_model.get_layer(cut_layer_name).output)
+
+        elif self.model_name == 'resnet':
             cut_layer_name = 'conv4_block36_2_relu'
             base_model = keras.applications.ResNet152V2(
                 include_top=True,
