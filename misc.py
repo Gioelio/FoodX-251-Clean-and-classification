@@ -60,5 +60,10 @@ def center_scale_columns(features, labels):
     res = features.copy()
     for c in np.unique(labels):
         indices = labels == c
-        res[indices] = (res[indices] - res[indices].mean(axis=0)) / res[indices].std(axis=0)
+        std = res[indices].std(axis=0)
+        for col in range(std.shape[0]):
+            if std[col] != 0:
+                res[indices, col] = (res[indices, col] - res[indices, col].mean(axis=0)) / res[indices, col].std(axis=0)
+            else:
+                res[indices, col] = (res[indices, col] - res[indices, col].mean(axis=0))
     return res
