@@ -3,11 +3,12 @@ import pandas as pd
 
 
 def load(filename, column=1, stratified_sample_rate=1):
-    dataframe = pd.read_csv(filename)
+    dataframe = pd.read_csv(filename, names=['filename', 'label'], header=None)
     dataframe = dataframe.groupby(dataframe.columns[column], group_keys=False).apply(
         lambda group: group.sample(frac=stratified_sample_rate)
     )
     return dataframe
+
 
 
 def load_class_labels(path, column=1, sep=' ', header=None):
