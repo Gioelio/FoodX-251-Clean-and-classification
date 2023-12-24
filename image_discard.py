@@ -1,5 +1,7 @@
 import numpy as np
 
+import misc
+
 
 def find_outliers_per_class_centered_scaled(standardized_features, labels, image_names, threshold=0.2):
     classes = np.unique(labels)
@@ -18,6 +20,27 @@ def find_outliers_per_class_centered_scaled(standardized_features, labels, image
         _sorted = np.argsort(distances[c])[::-1]
         distances[c] = distances[c][_sorted]
         names[c] = names[c][_sorted]
+
+    return names, distances
+
+
+def find_outliers_iter(features, labels, image_names, threshold=15, num_iter=10):
+    to_consider = np.ones((len(features)))
+    classes = np.unique(labels)
+    distances = [[] for _ in range(len(classes))]
+    names = [[] for _ in range(len(classes))]
+
+    for _ in range(num_iter):
+        features_to_consider = features[to_consider == 1]
+        names_to_consider = image_names[to_consider == 1]
+        labels_to_consider = labels[to_consider == 1]
+        standardized_features = misc.center_scale_columns(features_to_consider, labels_to_consider)
+        n, d = find_outliers_per_class_centered_scaled(standardized_features, labels_to_consider, names_to_consider, threshold)
+        for i in range(len(n)):
+            for j in range(len(d[i])):
+                names[i].append(n[i][j])
+                distances[i].append(d[i][j])
+                to_consider[np.where(image_names == n[i][j])[0]] = 0
 
     return names, distances
 
