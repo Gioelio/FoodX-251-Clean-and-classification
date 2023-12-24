@@ -80,6 +80,7 @@ class NN_filter:
         images = np.zeros((self.batch_size, 224, 224, 3));
         for i, filename in enumerate(filenames):
             image = cv.imread(self.train_dir + filename);
+            image = image[:, :, ::-1]
             image = cv.resize(image, (224, 224));
             images[i] = image;
         
