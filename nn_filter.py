@@ -23,13 +23,13 @@ class NN_filter:
         print(tensorflow.config.list_physical_devices('GPU'))
 
     def extract_labels(batch_y):
-        labels = [];
+        labels = []
         for i, x in enumerate(batch_y):
             labels.append(int(x))
         return labels
 
     def generate_model(self, summary=False):
-        model = None;
+        model = None
 
         if self.model_name == 'efficient_net':
             cut_layer_name = 'block7a_se_reduce'
@@ -122,14 +122,14 @@ class NN_filter:
         ratio = pca.explained_variance_ratio_
         cum_prob = ratio.cumsum()
         cum_prob = [(x, i) for x, i in enumerate(cum_prob)]
-        return cum_prob;
+        return cum_prob
 
     def fit_knn(self, features, labels, use_pca=False):
         knn = KNeighborsClassifier(n_neighbors=15, algorithm="auto")
         if use_pca and self.pca is not None:
             features = self.pca.transform(features)
         knn.fit(features, labels)
-        return knn;
+        return knn
 
     def get_cumulative_prob_position(self, prob, threshold=0.6, pos_proportion=0.2):
         indexed = [(x, i) for x, i in enumerate(prob)]
