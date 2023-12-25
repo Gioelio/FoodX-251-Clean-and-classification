@@ -81,8 +81,13 @@ def write_discarded_images(names, class_labels, discarded_dir, images_dir, delet
         for name in names[c]:
             shutil.copyfile(images_dir + name, discarded_subdir + '/' + name)
 
+
 def write_cleaned_csv(train_df, exclude_names, base_dir, filename='train_info_cleaned'):
-    cleaned_df = train_df.copy(deep=True);
-    cleaned_df = cleaned_df[~cleaned_df['filename'].isin(exclude_names)];
-    cleaned_df.to_csv(base_dir + filename + '.csv', header=False, index=False);
-    return cleaned_df;
+    cleaned_df = train_df.copy(deep=True)
+    global_exclude = []
+    for c in exclude_names:
+        for name in c:
+            global_exclude.append(name)
+    cleaned_df = cleaned_df[~cleaned_df['filename'].isin(global_exclude)]
+    cleaned_df.to_csv(base_dir + filename + '.csv', header=False, index=False)
+    return cleaned_df
