@@ -84,5 +84,5 @@ def write_discarded_images(names, class_labels, discarded_dir, images_dir, delet
 def write_cleaned_csv(train_df, exclude_names, base_dir, filename='train_info_cleaned'):
     cleaned_df = train_df.copy(deep=True);
     cleaned_df = cleaned_df[~cleaned_df['filename'].isin(exclude_names)];
-    cleaned_df.to_csv(base_dir + filename + '.csv', header=False);
+    cleaned_df.to_csv(base_dir + filename + '.csv', header=False, index=False);
     return cleaned_df;
