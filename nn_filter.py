@@ -5,6 +5,7 @@ from sklearn.decomposition import PCA
 from sklearn.neighbors import KNeighborsClassifier
 from tensorflow import keras
 from tqdm import tqdm
+from data_loader import data_loader
 
 
 class NN_filter:
@@ -13,6 +14,7 @@ class NN_filter:
         self.train_dir = train_dir
         self.batch_size = batch_size
         self.model_name = model_name
+        self.dl = data_loader(self.train, self.train_dir, self.batch_size, (224, 224));
 
         if model_name != 'resnet' and model_name != 'vgg' and model_name != 'efficient_net':
             raise ValueError("Variable 'model_name' can assume only those values: 'resnet', 'vgg', 'efficient_net'")
@@ -74,23 +76,6 @@ class NN_filter:
 
         return out_shape
 
-    def load_batch(self, index):
-        index = index * self.batch_size
-        end = index + self.batch_size
-        if end > len(self.train):
-            end = len(self.train)
-
-        filenames = self.train.iloc[index:end]['filename'].values
-        labels = self.train.iloc[index:end]['label'].values
-        images = np.zeros((self.batch_size, 224, 224, 3))
-        for i, filename in enumerate(filenames):
-            image = cv.imread(self.train_dir + filename)
-            image = image[:, :, ::-1]
-            image = cv.resize(image, (224, 224))
-            images[i] = image
-
-        return images, labels, filenames
-
     def fit_train(self):
         out_shape = self.get_out_shape()
 
@@ -99,8 +84,8 @@ class NN_filter:
         labels = self.train['label'].values
         images_name = self.train['filename'].values
 
-        for batch_num in tqdm(range(int(len(self.train) / self.batch_size))):
-            (images, _, _) = self.load_batch(batch_num)
+        for batch_num in tqdm(range(self.dl.number_of_batch())):
+            (images, _, _) = self.dl.get_batch(batch_num)
             images = self.preprocess_fun(images)
             fe = self.model.predict(images, verbose=0)
             fe = fe.reshape(fe.shape[0], -1)
@@ -148,8 +133,8 @@ class NN_filter:
 
     def filter_with_knn(self, knn, use_pca=False, threshold=0.85, pos_proportion=0.1):
         discarded_filenames = []
-        for batch_num in tqdm(range(int(len(self.train) / self.batch_size))):
-            (images, labels, filenames) = self.load_batch(batch_num)
+        for batch_num in tqdm(range(self.dl.number_of_batch())):
+            (images, labels, filenames) = self.dl.get_batch(batch_num)
             images = self.preprocess_fun(images)
             fe = self.model.predict(images, verbose=0)
             fe = fe.reshape(fe.shape[0], -1)
