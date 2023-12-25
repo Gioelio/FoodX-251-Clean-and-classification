@@ -147,6 +147,7 @@ class NN_filter:
         return pos
 
     def filter_with_knn(self, knn, use_pca=False, threshold=0.85, pos_proportion=0.1):
+        discarded_filenames = []
         for batch_num in tqdm(range(int(len(self.train) / self.batch_size))):
             (images, labels, filenames) = self.load_batch(batch_num)
             images = self.preprocess_fun(images)
@@ -161,4 +162,7 @@ class NN_filter:
                 predicted.append(self.get_cumulative_prob_position(prob, threshold, pos_proportion))
 
             result = [True if x in y else False for x, y in zip(labels, predicted)]
-            print('True', result.count(True), 'False', result.count(False))
+            discarded = [filename if x else None for filename, x in zip(filenames, result)]
+            discarded_filenames = discarded_filenames + discarded
+        
+        return discarded_filenames;

@@ -1,5 +1,5 @@
 import numpy as np
-
+import pandas as pd
 import misc
 
 
@@ -80,3 +80,9 @@ def write_discarded_images(names, class_labels, discarded_dir, images_dir, delet
         os.makedirs(discarded_subdir)
         for name in names[c]:
             shutil.copyfile(images_dir + name, discarded_subdir + '/' + name)
+
+def write_cleaned_csv(train_df, exclude_names, base_dir, filename='train_info_cleaned'):
+    cleaned_df = train_df.copy(deep=True);
+    cleaned_df = cleaned_df[~cleaned_df['filename'].isin(exclude_names)];
+    cleaned_df.to_csv(base_dir + filename + '.csv', header=False);
+    return cleaned_df;
