@@ -35,8 +35,7 @@ def find_outliers_iter(features, labels, image_names, threshold=15, num_iter=10)
         names_to_consider = image_names[to_consider == 1]
         labels_to_consider = labels[to_consider == 1]
         standardized_features = misc.center_scale_columns(features_to_consider, labels_to_consider)
-        n, d = find_outliers_per_class_centered_scaled(standardized_features, labels_to_consider, names_to_consider,
-                                                       threshold)
+        n, d = find_outliers_per_class_centered_scaled(standardized_features, labels_to_consider, names_to_consider, threshold)
         for i in range(len(n)):
             for j in range(len(d[i])):
                 names[i].append(n[i][j])
@@ -90,5 +89,5 @@ def write_cleaned_csv(train_df, exclude_names, base_dir, filename='train_info_cl
         for name in c:
             global_exclude.append(name)
     cleaned_df = cleaned_df[~cleaned_df['filename'].isin(global_exclude)]
-    cleaned_df.to_csv(base_dir + filename + '.csv', header=False)
+    cleaned_df.to_csv(base_dir + filename + '.csv', header=False, index=False)
     return cleaned_df
