@@ -15,7 +15,7 @@ class NN_filter:
         self.model_name = model_name
 
         if model_name != 'resnet' and model_name != 'vgg' and model_name != 'efficient_net':
-            raise ValueError("Variable 'model_name' can assume only those values: 'resnet', 'vgg'")
+            raise ValueError("Variable 'model_name' can assume only those values: 'resnet', 'vgg', 'efficient_net'")
 
         self.model = self.generate_model()
 

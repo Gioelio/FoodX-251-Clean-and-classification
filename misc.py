@@ -68,3 +68,18 @@ def center_scale_columns(features, labels):
             else:
                 res[indices, col] = (res[indices, col] - res[indices, col].mean(axis=0))
     return res
+
+def apply_data_augmentation(images):
+    from imgaug import augmenters as iaa
+
+    seq = iaa.Sequential([
+        iaa.Sometimes(0.5, iaa.GaussianBlur(sigma=(0, 5))),
+        # loc and scale are mean and std of the gaussian noise from to sample
+        iaa.Sometimes(0.5, iaa.AdditiveGaussianNoise(loc=0, scale=(0.1*255, 0.5*255), per_channel=0.9)),
+        iaa.Sometimes(0.5, iaa.JpegCompression(compression=(85, 99)))
+    ], random_order=True)
+
+    images = images.astype('uint8')
+    images_aug = seq(images=images);
+
+    return images_aug;
