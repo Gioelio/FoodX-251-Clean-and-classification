@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+import os
+import shutil
 
 
 def load(filename, column=1, stratified_sample_rate=1):
@@ -93,3 +95,13 @@ def apply_standard_data_augmentation(images):
         iaa.Sometimes(0.5, iaa.Crop())
     ], random_order=True)
     return seq(images=images)
+
+
+def create_clean_trainset(train_dir, clean_train_dir, clean_train_names, clean_train_labels, class_names):
+    os.mkdir(clean_train_dir)
+    for c in np.unique(clean_train_labels):
+        class_directory = clean_train_dir + str(c) + '_' + class_names[c] + '/'
+        os.mkdir(class_directory)
+        names = clean_train_names[clean_train_labels == c]
+        for name in names:
+            shutil.copy(train_dir + name, class_directory + name)
