@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+import os
+import shutil
 
 
 def load(filename, column=1, stratified_sample_rate=1):
@@ -8,7 +10,6 @@ def load(filename, column=1, stratified_sample_rate=1):
         lambda group: group.sample(frac=stratified_sample_rate)
     )
     return dataframe
-
 
 
 def load_class_labels(path, column=1, sep=' ', header=None):
@@ -69,17 +70,38 @@ def center_scale_columns(features, labels):
                 res[indices, col] = (res[indices, col] - res[indices, col].mean(axis=0))
     return res
 
+
 def apply_data_augmentation(images):
     from imgaug import augmenters as iaa
 
     seq = iaa.Sequential([
         iaa.Sometimes(0.5, iaa.GaussianBlur(sigma=(0, 5))),
         # loc and scale are mean and std of the gaussian noise from to sample
-        iaa.Sometimes(0.5, iaa.AdditiveGaussianNoise(loc=0, scale=(0.1*255, 0.5*255), per_channel=0.9)),
+        iaa.Sometimes(0.5, iaa.AdditiveGaussianNoise(loc=0, scale=(0.1 * 255, 0.5 * 255), per_channel=0.9)),
         iaa.Sometimes(0.5, iaa.JpegCompression(compression=(85, 99)))
     ], random_order=True)
 
     images = images.astype('uint8')
-    images_aug = seq(images=images);
+    images_aug = seq(images=images)
 
-    return images_aug;
+    return images_aug
+
+
+def apply_standard_data_augmentation(images):
+    from imgaug import augmenters as iaa
+    seq = iaa.Sequential([
+        iaa.Sometimes(0.5, iaa.HorizontalFlip()),
+        iaa.Sometimes(0.5, iaa.Rotate()),
+        iaa.Sometimes(0.5, iaa.Crop())
+    ], random_order=True)
+    return seq(images=images)
+
+
+def create_clean_trainset(train_dir, clean_train_dir, clean_train_names, clean_train_labels, class_names):
+    os.mkdir(clean_train_dir)
+    for c in np.unique(clean_train_labels):
+        class_directory = clean_train_dir + str(c) + '_' + class_names[c] + '/'
+        os.mkdir(class_directory)
+        names = clean_train_names[clean_train_labels == c]
+        for name in names:
+            shutil.copy(train_dir + name, class_directory + name)
