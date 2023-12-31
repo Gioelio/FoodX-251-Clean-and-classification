@@ -48,6 +48,18 @@ def group_stats(array, labels, numeric_correction=1e-10):
     return mean, cov
 
 
+def compute_independent_stats(features, labels):
+    classes = np.unique(labels)
+    avg = [np.zeros(features.shape[1]) for _ in range(len(classes))]
+    std = [np.zeros(features.shape[1]) for _ in range(len(classes))]
+    for c in classes:
+        to_consider = features[labels == c]
+        avg[c] = to_consider.mean(axis=0)
+        std[c] = to_consider.std(axis=0)
+
+    return np.array(avg), np.array(std)
+
+
 def unroll_arrays(arrays_list, sampling_frac=1):
     result = []
     for el in arrays_list:
