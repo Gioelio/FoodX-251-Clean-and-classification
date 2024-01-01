@@ -1,7 +1,7 @@
 from tensorflow import keras
 
 import misc
-from data_loader import data_loader
+from data_loader import data_loader, NoLabelDataLoader
 
 
 def build_finetune_network(base_builder, model_extension, cut_layer, optimizer, metrics, loss,
@@ -49,16 +49,16 @@ def train_network(model, train_info, val_info, train_dir, batch_size=64, epochs=
         epoch_loss = 0
         epoch_acc = 0
         train_loader.shuffle_dataframe()
-        for i in range(len(train_info) // batch_size):
+        for i in range(train_loader.number_of_batch()):
             next_batch, next_labels, _ = (train_loader
-                                          .get_batch(i, lambda x: custom_preprocess(x,augment, preprocess_input)))
+                                          .get_batch(i, lambda x: custom_preprocess(x, augment, preprocess_input)))
             labels = keras.utils.to_categorical(next_labels, num_classes=251)
             loss, acc = model.train_on_batch(next_batch, labels)
             epoch_loss += loss
             epoch_acc += acc
             print('\rEpoch {}/{} iteration {}/{} Loss: {:10.4f} Accuracy: {:10.4f}'
                   .format(epoch + 1, epochs, i + 1,
-                          len(train_info) // batch_size,
+                          train_loader.number_of_batch(),
                           epoch_loss / (i + 1),
                           epoch_acc / (i + 1)),
                   end='')
@@ -66,7 +66,7 @@ def train_network(model, train_info, val_info, train_dir, batch_size=64, epochs=
         val_loss = 0
         val_acc = 0
 
-        for i in range(len(val_info) // batch_size):
+        for i in range(val_loader.number_of_batch()):
             batch, labels, _ = (val_loader
                                 .get_batch(i,preprocessing=lambda x: custom_preprocess(x, False, preprocess_input)))
             labels = keras.utils.to_categorical(labels, num_classes=251)
@@ -84,7 +84,7 @@ def evaluate_model(model, info, dir, batch_size=64, preprocess_input=None):
 
     total_loss = 0
     total_acc = 0
-    for i in range(len(info) // batch_size):
+    for i in range(loader.number_of_batch()):
         batch, labels, _ = loader.get_batch(i, preprocessing=lambda x: custom_preprocess(x, False, preprocess_input))
         labels = keras.utils.to_categorical(labels, num_classes=251)
         loss, acc = model.evaluate(batch, labels, verbose=0)
@@ -94,14 +94,14 @@ def evaluate_model(model, info, dir, batch_size=64, preprocess_input=None):
 
     print(
         'Validation Loss: {:10.4f}, Validation accuracy: {:10.4f}'.
-        format(total_loss / (len(info) // batch_size), total_acc / (len(info) // batch_size)))
+        format(total_loss / loader.number_of_batch(), total_acc / loader.number_of_batch()))
 
 
-def predict(model, info, dir, batch_size, preprocess_input=None):
-    loader = data_loader(info, dir, batch_size=batch_size, resize_shape=(224, 224))
+def predict(model, dir, batch_size, preprocess_input=None):
+    loader = NoLabelDataLoader(dir, batch_size=batch_size, target_size=(224, 224))
     predictions = []
-    for i in range(len(info) // batch_size):
-        batch, _, _ = loader.get_batch(i, preprocessing=lambda x: custom_preprocess(x, False, preprocess_input))
+    for i in range(loader.number_of_batches()):
+        batch, _ = loader.get_batch(i, preprocessing=lambda x: custom_preprocess(x, False, preprocess_input))
         pred = model.predict(batch)
         for p in pred:
             predictions.append(p)
