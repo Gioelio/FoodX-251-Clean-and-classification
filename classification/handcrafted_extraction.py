@@ -5,7 +5,7 @@ import numpy as np;
 from misc import unroll_arrays
 import bag_of_words as bow
 
-def extract_and_process_features(images_dir, images_names, kmeans=None, sift_info=True, gabor_obj=True, color=True, lbp_info=True):
+def extract_features(images_dir, images_names, kmeans=None, sift_info=True, gabor_obj=True, color=True, lbp_info=True):
     """ 
     Extract various types of features
 
@@ -88,4 +88,4 @@ def concat(arr1, arr2):
     if arr1 is None:
         return arr2
 
-    np.concatenate((arr1, arr2), axis=1)
+    return np.concatenate((arr1, arr2), axis=1)
