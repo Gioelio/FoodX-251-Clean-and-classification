@@ -19,12 +19,15 @@ def build_finetune_network(cut_layer='top_dropout', non_trainable_cut_layer='blo
     return model
 
 
-def custom_preprocess(x):
-    # x = misc.apply_standard_data_augmentation(x)
+def custom_preprocess(x, standard_aug=False, aug=False):
+    if standard_aug:
+        x = misc.apply_standard_data_augmentation(x);
+    if aug:
+        x = misc.apply_data_augmentation(x);
     return preprocess_input(x)
 
 
-def train_network(model, train_info, train_dir, validation_split=0.2, batch_size=128, epochs=1):
+def train_network(model, train_info, train_dir, validation_split=0.2, batch_size=128, epochs=1, std_aug=False, aug=False):
     val_set = train_info.groupby(train_info['label'], group_keys=False).apply(
         lambda group: group.sample(frac=validation_split)
     )
@@ -39,7 +42,7 @@ def train_network(model, train_info, train_dir, validation_split=0.2, batch_size
         epoch_acc = 0
         train_loader.shuffle_dataframe()
         for i in range(len(train_set) // batch_size):
-            batch, labels, _ = train_loader.get_batch(i, preprocessing=custom_preprocess)
+            batch, labels, _ = train_loader.get_batch(i, preprocessing=lambda x: custom_preprocess(x, std_aug, aug))
             labels = keras.utils.to_categorical(labels, num_classes=251)
             loss, acc = model.train_on_batch(batch, labels)
             epoch_loss += loss
@@ -54,7 +57,7 @@ def train_network(model, train_info, train_dir, validation_split=0.2, batch_size
         val_acc = 0
 
         for i in range(len(val_set) // batch_size):
-            batch, labels, _ = val_loader.get_batch(i, preprocessing=custom_preprocess)
+            batch, labels, _ = val_loader.get_batch(i, preprocessing=lambda x: custom_preprocess(x, std_aug, aug))
             labels = keras.utils.to_categorical(labels, num_classes=251)
             loss, acc = model.evaluate(batch, labels)
             val_loss += loss
