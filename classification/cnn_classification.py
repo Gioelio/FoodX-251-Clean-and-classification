@@ -1,5 +1,6 @@
 from tensorflow import keras
 import gc
+import numpy as np
 
 import misc
 from data_loader import data_loader, NoLabelDataLoader
@@ -43,7 +44,6 @@ def custom_preprocess(x, augment, strong_augment, preprocess_input):
 
 def train_network(model, save_path, train_info, val_info, train_dir, batch_size=64, epochs=10,
                   augment=True, strong_augment=False, preprocess_input=None, reload_rate=1):
-
     train_loader = data_loader(train_info, directory=train_dir, batch_size=batch_size,
                                resize_shape=(224, 224))
     val_loader = data_loader(val_info, directory=train_dir, batch_size=batch_size, resize_shape=(224, 224))
@@ -129,12 +129,16 @@ def evaluate_model(model, info, dir, batch_size=64, preprocess_input=None):
 def predict(model, dir, batch_size, preprocess_input=None):
     loader = NoLabelDataLoader(dir, batch_size=batch_size, target_size=(224, 224))
     predictions = []
+    image_names = []
     for i in range(loader.number_of_batches()):
-        batch, _ = loader.get_batch(i, preprocessing=lambda x: custom_preprocess(x, False,
-                                                                                 False,
-                                                                                 preprocess_input))
+        batch, names = loader.get_batch(i, preprocessing=lambda x: custom_preprocess(x, False,
+                                                                                     False,
+                                                                                     preprocess_input))
         pred = model.predict(batch)
         for p in pred:
             predictions.append(p)
 
-    return predictions
+        for n in names:
+            image_names.append(n)
+
+    return np.array(predictions), image_names
