@@ -51,6 +51,9 @@ class NoLabelDataLoader:
             batch_num += 1
         return batch_num
 
+    def image_count(self):
+        return len(self.image_names)
+
     def get_batch(self, batch_num, preprocessing=None):
         start = batch_num * self.batch_size
         end = start + self.batch_size
