@@ -52,7 +52,7 @@ def load_features(dir, feat_name, filenames):
 
     return all_features;
 
-def load_all_features(dir, filenames):
+def load_all_features(dir, filenames, load_sift = False):
     gabor = None;
     color = None;
     lbp = None;
@@ -63,31 +63,33 @@ def load_all_features(dir, filenames):
 
     try:
         gabor = load_features(dir, 'gabor', filenames);
-        concat(all_features, gabor, axis=1);
+        all_features = concat(all_features, gabor, axis=1);
     except:
         print('No gabor features found')
 
     try:
         color = load_features(dir, 'color', filenames);
-        concat(all_features, color, axis=1);
+        all_features = concat(all_features, color, axis=1);
     except:
         print('No color features found')
 
     try:
         lbp = load_features(dir, 'lbp', filenames);
-        concat(all_features, lbp, axis=1);
+        all_features = concat(all_features, lbp, axis=1);
     except:
         print('No lbp features found')
 
-    try:
-        sift = load_features(dir, 'sift_features', filenames)
-        concat(all_features, sift, axis=1);
-    except:
-        print('No sift features found')
+    if load_sift:
+        try:
+            sift = load_features(dir, 'sift_features', filenames)
+            sift = unroll_arrays(sift)
+            all_features = concat(all_features, sift, axis=1);
+        except:
+            print('No sift features found')
 
     try:
         bow = load_features(dir, 'bow_features', filenames)
-        concat(all_features, bow, axis=1);
+        all_features = concat(all_features, bow, axis=1);
     except:
         print('No bow features found')
     
@@ -188,6 +190,6 @@ def compute_features(images_dir, images_names, kmeans=None, sift_info=True, gabo
 
 def concat(arr1, arr2, axis=1):
     if arr1 is None:
-        return arr2
+        return np.array(arr2)
 
-    return np.concatenate((arr1, arr2), axis=axis)
+    return np.concatenate((arr1, np.array(arr2)), axis=axis)
