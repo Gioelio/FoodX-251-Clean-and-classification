@@ -141,7 +141,7 @@ def train_network(model, save_path, train_info, val_info, train_dir, batch_size=
 
         print(
             ' Validation Loss: {:5.4f}, Validation accuracy: {:5.4f}, Validation top3 accuracy: {:5.4f}'.
-            format(val_loss_history[-1], val_acc_history[-1], val_top3_acc))
+            format(val_loss_history[-1], val_acc_history[-1], val_top3_acc / float(len(val_info))))
 
     save_history(loss_history, acc_history, val_loss_history, val_acc_history, save_path + history_suffix)
     model = reload_model(model, save_path)
