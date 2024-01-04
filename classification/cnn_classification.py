@@ -1,6 +1,7 @@
 from tensorflow import keras
 import gc
 import numpy as np
+import pandas as pd
 
 import misc
 from data_loader import data_loader, NoLabelDataLoader
@@ -42,8 +43,37 @@ def custom_preprocess(x, augment, strong_augment, preprocess_input):
     return x
 
 
+def save_history(loss, acc, val_loss, val_acc, path):
+    history_df = pd.DataFrame({
+        "loss": loss,
+        "acc": acc,
+        "val_loss": val_loss,
+        "val_acc": val_acc
+    })
+
+    history_df.to_csv(path)
+
+
+def load_history(path):
+    history_df = pd.read_csv(path)
+    loss_history = history_df['loss']
+    val_loss_history = history_df['val_loss']
+    acc_history = history_df['acc']
+    val_acc_history = history_df['val_acc']
+
+    return loss_history, acc_history, val_loss_history, val_acc_history
+
+
+def reload_model(model, path):
+    model.save(path)
+    del model
+    gc.collect()
+    keras.backend.clear_session()
+    return keras.models.load_model(path)
+
+
 def train_network(model, save_path, train_info, val_info, train_dir, batch_size=64, epochs=10,
-                  augment=True, strong_augment=False, preprocess_input=None, reload_rate=1):
+                  augment=True, strong_augment=False, preprocess_input=None, reload_rate=1, prev_history=None):
     train_loader = data_loader(train_info, directory=train_dir, batch_size=batch_size,
                                resize_shape=(224, 224))
     val_loader = data_loader(val_info, directory=train_dir, batch_size=batch_size, resize_shape=(224, 224))
@@ -53,13 +83,18 @@ def train_network(model, save_path, train_info, val_info, train_dir, batch_size=
     val_loss_history = []
     val_acc_history = []
 
+    if prev_history is not None:
+        loss_history = prev_history['loss']
+        acc_history = prev_history['acc']
+        val_loss_history = prev_history['val_loss']
+        val_acc_history = prev_history['val_acc']
+
+    history_suffix = "_history.csv"
+
     for epoch in range(epochs):
         if epoch > 0 and epoch % reload_rate == 0:
-            model.save(save_path)
-            del model
-            gc.collect()
-            keras.backend.clear_session()
-            model = keras.models.load_model(save_path)
+            save_history(loss_history, acc_history, val_loss_history, val_acc_history, save_path + history_suffix)
+            model = reload_model(model, save_path)
 
         epoch_loss = 0
         epoch_acc = 0
@@ -73,7 +108,7 @@ def train_network(model, save_path, train_info, val_info, train_dir, batch_size=
             loss, acc = model.train_on_batch(next_batch, labels)
             epoch_loss += loss * len(next_batch)
             epoch_acc += acc * len(next_batch)
-            print('\rEpoch {}/{} iteration {}/{} Loss: {:10.4f} Accuracy: {:10.4f}'
+            print('\rEpoch {}/{} iteration {}/{} Loss: {:5.4f} Accuracy: {:5.4f}'
                   .format(epoch + 1, epochs, i + 1,
                           train_loader.number_of_batch(),
                           epoch_loss / min(batch_size * (i + 1), len(train_info)),
@@ -100,10 +135,13 @@ def train_network(model, save_path, train_info, val_info, train_dir, batch_size=
         val_acc_history.append(val_acc / float(len(val_info)))
 
         print(
-            ' Validation Loss: {:10.4f}, Validation accuracy: {:10.4f}'.
+            ' Validation Loss: {:5.4f}, Validation accuracy: {:5.4f}'.
             format(val_loss_history[-1], val_acc_history[-1]))
 
-    return loss_history, acc_history, val_loss_history, val_acc_history
+    save_history(loss_history, acc_history, val_loss_history, val_acc_history, save_path + history_suffix)
+    model = reload_model(model, save_path)
+
+    return model, loss_history, acc_history, val_loss_history, val_acc_history
 
 
 def evaluate_model(model, info, dir, batch_size=64, preprocess_input=None):
@@ -122,7 +160,7 @@ def evaluate_model(model, info, dir, batch_size=64, preprocess_input=None):
         print(loss, acc)
 
     print(
-        'Validation Loss: {:10.4f}, Validation accuracy: {:10.4f}'.
+        'Validation Loss: {:5.4f}, Validation accuracy: {:5.4f}'.
         format(total_loss / loader.number_of_batch(), total_acc / loader.number_of_batch()))
 
 
