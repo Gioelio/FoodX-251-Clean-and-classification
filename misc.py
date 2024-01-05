@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import os
 import shutil
+import cv2 as cv
 
 
 def load(filename, column=1, stratified_sample_rate=1):
@@ -35,6 +36,7 @@ def is_positive_semidefinite(matrix):
 def group_stats(array, labels, numeric_correction=1e-10):
     mean = np.zeros((len(np.unique(labels)), array.shape[1]))
     cov = np.zeros((len(np.unique(labels)), array.shape[1], array.shape[1]))
+    median = np.zeros(len(np.unique(labels), array.shape[1]))
     for i, c in enumerate(np.unique(labels)):
         indices = labels == c
         sub = array[indices]
@@ -44,20 +46,23 @@ def group_stats(array, labels, numeric_correction=1e-10):
         if not is_positive_semidefinite(cov[i]):
             print("Non positive semidefinite matrix")
         mean[i] = sub.mean(axis=0)
+        median[i] = sub.mean(axis=0)
 
-    return mean, cov
+    return mean, cov, median
 
 
 def compute_independent_stats(features, labels):
     classes = np.unique(labels)
     avg = [np.zeros(features.shape[1]) for _ in range(len(classes))]
     std = [np.zeros(features.shape[1]) for _ in range(len(classes))]
+    median = [np.zeros(features.shape[1]) for _ in range(len(classes))]
     for c in classes:
         to_consider = features[labels == c]
         avg[c] = to_consider.mean(axis=0)
         std[c] = to_consider.std(axis=0)
+        median[c] = to_consider.median(axis=0)
 
-    return np.array(avg), np.array(std)
+    return np.array(avg), np.array(std), np.array(median)
 
 
 def unroll_arrays(arrays_list, sampling_frac=1):
@@ -117,3 +122,24 @@ def create_clean_trainset(train_dir, clean_train_dir, clean_train_names, clean_t
         names = clean_train_names[clean_train_labels == c]
         for name in names:
             shutil.copy(train_dir + name, class_directory + name)
+
+
+def create_collage_with_random_imgs(folder_name, save_dir, n=10, image_names = None):
+    all_images_names = np.array(os.listdir(folder_name));
+    if image_names is not None:
+        all_images_names = all_images_names[all_images_names.isin(image_names)];
+
+    index = np.random.randint(all_images_names.shape[0], size= n * n)
+
+    for i in range(len(index)):
+        example = cv.imread(folder_name + all_images_names[i])
+        example = cv.cvtColor(example, cv.COLOR_BRG2RGB);
+        plt.subplot(n, n, 1 + i)
+        plt.axis('off')
+        plt.imshow(examples[index[i], :, :, 0])
+
+    next_name = os.listdir(save_dir)
+	
+    filename = save_dir + 'collage' + len(next_name) + '.png'
+    plt.savefig(filename)
+    plt.close()
