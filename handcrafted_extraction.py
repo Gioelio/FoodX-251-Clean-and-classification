@@ -23,13 +23,13 @@ def store_features(images_dir, images_names, store_path, kmeans=None, sift_info=
     sift_dir = store_path + 'sift_features/';
     bow_dir = store_path + 'bow_features/';
 
-    if gabor_obj != False:
+    if gabor_obj is not None:
         store_feature(gabor, gabor_dir, images_names)
-    if color != False:
+    if color is not None:
         store_feature(color_features, color_dir, images_names)
-    if lbp_info != False:
+    if lbp_info is not None:
         store_feature(lbp_features, lbp_dir, images_names)
-    if sift_info != False:
+    if sift_info is not None:
         store_feature(sift_features, sift_dir, images_names)
         store_feature(bow_features, bow_dir, images_names)
 
@@ -120,6 +120,8 @@ def compute_features(images_dir, images_names, kmeans=None, sift_info=True, gabo
     :color_histogram Boolean
     :lbp_info Boolean or array of distances
     """
+    import time
+
     features_names = []
     if sift_info is not None:
         features_names.append("sift")
@@ -131,8 +133,16 @@ def compute_features(images_dir, images_names, kmeans=None, sift_info=True, gabo
         features_names.append("lbp")
 
     print("Preparing to compute: ", ' ,'.join(features_names))
+    time.sleep(3)
+
 
     pool = ThreadPool(processes=14)
+
+    gabor = None;
+    color_features = None;
+    lbp_features = None;
+    sift_features = None;
+    bow_features = None;
 
     if sift_info == True:
         sift_info = {
@@ -189,7 +199,7 @@ def compute_features(images_dir, images_names, kmeans=None, sift_info=True, gabo
         lbp_features = lbp_features.get();
         lbp_features = np.array(lbp_features);
         all_features = concat(all_features, lbp_features);
-    if sift_features is not None:
+    if sift_info is not None:
         sift_features = sift_features.get()
         unrolled = unroll_arrays(sift_features, sift_info['num_of_sample_kmeans']);
         if kmeans is None:
