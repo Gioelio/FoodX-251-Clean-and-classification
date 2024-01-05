@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import shutil
 import cv2 as cv
-
+import matplotlib.pyplot as plt
 
 def load(filename, column=1, stratified_sample_rate=1):
     dataframe = pd.read_csv(filename, names=['filename', 'label'], header=None)
@@ -125,21 +125,23 @@ def create_clean_trainset(train_dir, clean_train_dir, clean_train_names, clean_t
 
 
 def create_collage_with_random_imgs(folder_name, save_dir, n=10, image_names = None):
-    all_images_names = np.array(os.listdir(folder_name));
     if image_names is not None:
-        all_images_names = all_images_names[all_images_names.isin(image_names)];
+        all_images_names = image_names;
+    else:
+        all_images_names = os.listdir(folder_name);
 
     index = np.random.randint(all_images_names.shape[0], size= n * n)
 
     for i in range(len(index)):
-        example = cv.imread(folder_name + all_images_names[i])
-        example = cv.cvtColor(example, cv.COLOR_BRG2RGB);
+        example = cv.imread(folder_name + all_images_names[index[i]])
+        example = cv.cvtColor(example, cv.COLOR_BGR2RGB);
         plt.subplot(n, n, 1 + i)
         plt.axis('off')
-        plt.imshow(examples[index[i], :, :, 0])
+        plt.imshow(example)
 
     next_name = os.listdir(save_dir)
 	
-    filename = save_dir + 'collage' + len(next_name) + '.png'
+    filename = save_dir + 'collage' + str(len(next_name)) + '.png'
     plt.savefig(filename)
+    plt.show()
     plt.close()
