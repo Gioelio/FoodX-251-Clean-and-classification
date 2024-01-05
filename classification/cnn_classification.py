@@ -98,6 +98,7 @@ def train_network(model, save_path, train_info, val_info, train_dir, batch_size=
 
         epoch_loss = 0
         epoch_acc = 0
+        epoch_top3_acc = 0
         train_loader.shuffle_dataframe()
         for i in range(train_loader.number_of_batch()):
             next_batch, next_labels, _ = (train_loader
@@ -105,14 +106,16 @@ def train_network(model, save_path, train_info, val_info, train_dir, batch_size=
                                                                                     strong_augment,
                                                                                     preprocess_input)))
             labels = keras.utils.to_categorical(next_labels, num_classes=251)
-            loss, acc = model.train_on_batch(next_batch, labels)
+            loss, acc, top3_acc = model.train_on_batch(next_batch, labels)
             epoch_loss += loss * len(next_batch)
             epoch_acc += acc * len(next_batch)
-            print('\rEpoch {}/{} iteration {}/{} Loss: {:5.4f} Accuracy: {:5.4f}'
+            epoch_top3_acc += top3_acc * len(next_batch)
+            print('\rEpoch {}/{} iteration {}/{} Loss: {:5.4f} Accuracy: {:5.4f} Top-3 Accuracy: {:5.4f}'
                   .format(epoch + 1, epochs, i + 1,
                           train_loader.number_of_batch(),
                           epoch_loss / min(batch_size * (i + 1), len(train_info)),
-                          epoch_acc / min(batch_size * (i + 1), len(train_info))),
+                          epoch_acc / min(batch_size * (i + 1), len(train_info)),
+                          epoch_top3_acc / min(batch_size * (i + 1), len(train_info))), 
                   end='')
 
         loss_history.append(epoch_loss / float(len(train_info)))
@@ -120,6 +123,7 @@ def train_network(model, save_path, train_info, val_info, train_dir, batch_size=
 
         val_loss = 0
         val_acc = 0
+        val_top3_acc = 0
 
         for i in range(val_loader.number_of_batch()):
             batch, labels, _ = (val_loader
@@ -127,16 +131,17 @@ def train_network(model, save_path, train_info, val_info, train_dir, batch_size=
                                                                                         False,
                                                                                         preprocess_input)))
             labels = keras.utils.to_categorical(labels, num_classes=251)
-            loss, acc = model.evaluate(batch, labels, verbose=0)
+            loss, acc, top3 = model.evaluate(batch, labels, verbose=0)
             val_loss += loss * len(batch)
             val_acc += acc * len(batch)
+            val_top3_acc += top3 * len(batch)
 
         val_loss_history.append(val_loss / float(len(val_info)))
         val_acc_history.append(val_acc / float(len(val_info)))
 
         print(
-            ' Validation Loss: {:5.4f}, Validation accuracy: {:5.4f}'.
-            format(val_loss_history[-1], val_acc_history[-1]))
+            ' Validation Loss: {:5.4f}, Validation accuracy: {:5.4f}, Validation top3 accuracy: {:5.4f}'.
+            format(val_loss_history[-1], val_acc_history[-1], val_top3_acc / float(len(val_info))))
 
     save_history(loss_history, acc_history, val_loss_history, val_acc_history, save_path + history_suffix)
     model = reload_model(model, save_path)

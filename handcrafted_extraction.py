@@ -14,7 +14,7 @@ from tqdm import tqdm
 def store_features(images_dir, images_names, store_path, kmeans=None, sift_info=True, gabor_obj=True, color=True, lbp_info=True):
 
     (gabor, color_features, lbp_features, sift_features, kmeans, bow_features, all_features) = compute_features(
-        images_dir, images_names, kmeans=kmeans, sift_info=True, gabor_obj=True, color=True, lbp_info=True, separated=True
+        images_dir, images_names, kmeans=kmeans, sift_info=sift_info, gabor_obj=gabor_obj, color=color, lbp_info=lbp_info, separated=True
         );
 
     gabor_dir = store_path + 'gabor/';
@@ -52,7 +52,7 @@ def load_features(dir, feat_name, filenames):
 
     return all_features;
 
-def load_all_features(dir, filenames, load_sift = False):
+def load_all_features(dir, filenames, load_sift = False, load_color=True, load_gabor = True):
     gabor = None;
     color = None;
     lbp = None;
@@ -61,17 +61,19 @@ def load_all_features(dir, filenames, load_sift = False):
 
     all_features = None
 
-    try:
-        gabor = load_features(dir, 'gabor', filenames);
-        all_features = concat(all_features, gabor, axis=1);
-    except:
-        print('No gabor features found')
+    if load_gabor:
+        try:
+            gabor = load_features(dir, 'gabor', filenames);
+            all_features = concat(all_features, gabor, axis=1);
+        except:
+            print('No gabor features found')
 
-    try:
-        color = load_features(dir, 'color', filenames);
-        all_features = concat(all_features, color, axis=1);
-    except:
-        print('No color features found')
+    if load_color:
+        try:
+            color = load_features(dir, 'color', filenames);
+            all_features = concat(all_features, color, axis=1);
+        except:
+            print('No color features found')
 
     try:
         lbp = load_features(dir, 'lbp', filenames);
@@ -118,6 +120,18 @@ def compute_features(images_dir, images_names, kmeans=None, sift_info=True, gabo
     :color_histogram Boolean
     :lbp_info Boolean or array of distances
     """
+    features_names = []
+    if sift_info is not None:
+        features_names.append("sift")
+    if gabor_obj is not None:
+        features_names.append("gabor")
+    if color is not None:
+        features_names.append("color")
+    if lbp_info is not None:
+        features_names.append("lbp")
+
+    print("Preparing to compute: ", ' ,'.join(features_names))
+
     pool = ThreadPool(processes=14)
 
     if sift_info == True:

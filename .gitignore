@@ -301,3 +301,5 @@ pyrightconfig.json
 
 
 dataset
+outliers_detection/discarded_scaling_features_nn/
+classification/models/
