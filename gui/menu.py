@@ -1,6 +1,6 @@
 from PyQt6 import QtWidgets, uic
 from gui.search import SearchWindow
-from gui.classification import ClassificationWindow
+from gui.classification_gui import ClassificationWindow
 
 
 class MainMenu(QtWidgets.QMainWindow):
