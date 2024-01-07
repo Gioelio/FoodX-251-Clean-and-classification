@@ -3,24 +3,16 @@ from tensorflow import keras
 import cv2 as cv
 from vit_keras import vit
 from keras.applications.efficientnet_v2 import preprocess_input
-import gc
-from scipy.special import softmax
 from scipy.stats import entropy
 from misc import load_class_labels
+
 
 PRETRAINED_VIT_PATH = "classification/tuned_models/ViTb16_noise_extended"
 PRETRAINED_EFFICIENTNET_PATH = "classification/tuned_models/efficientnet_v2_noise_extended"
 LABEL_NAMES_PATH = "dataset/classes.txt"
 
-
-def load_and_predict(model_path, image, preprocessing):
-    trained_model = keras.models.load_model(model_path)
-    model_input = preprocessing(image)
-    prediction = trained_model.predict(model_input)[0]
-    del trained_model
-    keras.backend.clear_session()
-    gc.collect()
-    return prediction
+EN_MODEL = keras.models.load_model(PRETRAINED_EFFICIENTNET_PATH)
+VIT_MODEL = keras.models.load_model(PRETRAINED_VIT_PATH)
 
 
 def classify_image(path):
@@ -29,8 +21,8 @@ def classify_image(path):
     image = cv.resize(image, (224, 224))
     image = np.expand_dims(image, 0)
 
-    vit_prediction = load_and_predict(PRETRAINED_VIT_PATH, image, vit.preprocess_inputs)
-    efficientnet_prediction = load_and_predict(PRETRAINED_EFFICIENTNET_PATH, image, preprocess_input)
+    vit_prediction = VIT_MODEL.predict(vit.preprocess_inputs(image))[0]
+    efficientnet_prediction = EN_MODEL.predict(preprocess_input(image))[0]
 
     vit_entropy = 1 / entropy(vit_prediction)
     en_entropy = 1 / entropy(efficientnet_prediction)

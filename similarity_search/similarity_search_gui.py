@@ -16,6 +16,8 @@ NN_FEATURES = 'similarity_search/extracted_features/efficient_net_tuned_similari
 NN_FILENAMES = 'similarity_search/extracted_features/efficient_net_tuned_similarity_filenames.csv'
 IMAGE_DIR = 'dataset/complete/'
 
+FEATURE_EXTRACTOR = keras.models.load_model('classification/tuned_models/efficientnet_v2_cosine')
+FEATURE_EXTRACTOR = keras.Sequential(FEATURE_EXTRACTOR.layers[:-1])
 
 def load_images_for_gui(type='nn'):
     if type == 'nn':
@@ -33,9 +35,7 @@ def find_images_from_gui(query_path, features_handcrafted, features_nn, filename
     img = cv.cvtColor(img, cv.COLOR_BGR2RGB);
 
     image_limit = 1000
-    model = keras.models.load_model('classification/tuned_models/efficientnet_v2_cosine')
-    model = keras.Sequential(model.layers[:-1])
-    nn_most_similar, distances = find_similar(model, query_path, features_nn, filenames, preprocess_input, output_number=image_limit)
+    nn_most_similar, distances = find_similar(FEATURE_EXTRACTOR, query_path, features_nn, filenames, preprocess_input, output_number=image_limit)
     intersection = [];
     if features_handcrafted is not None:
         handcrafted_most_similar, distances = find_similar_handcrafted(IMAGE_DIR, features_handcrafted, query_path, False, output_number=image_limit)
