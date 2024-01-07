@@ -47,3 +47,26 @@ def find_similar(feature_extractor, query_image_path, database_features, databas
     most_similar_indices = np.argsort(distances)[0:output_number]
 
     return database_names[most_similar_indices], distances[most_similar_indices]
+
+def find_similar_handcrafted(images_dir, features, query_path, norm=True, output_number=10):
+    import pandas as pd
+    import os
+
+    if norm:
+        features = featuers(normalize);
+
+    arr = []
+    for feat in features:
+        arr.append(np.array(feat))
+
+    filenames = os.listdir(images_dir)
+
+    df = pd.DataFrame({'features': arr, 'filenames': filenames})
+    
+    mask = [el in query_path for el in df['filenames']]
+    query_features = df[mask].iloc[0].values[0]
+    distances = cdist([query_features], features)[0]
+    most_similar = np.argsort(distances)[0:output_number]
+
+    return df['filenames'][most_similar].values, distances[most_similar]
+
