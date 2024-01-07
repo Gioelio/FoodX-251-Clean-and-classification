@@ -39,11 +39,6 @@ def store_features(images_dir, images_names, store_path, kmeans=None, sift_info=
     return (all_features, kmeans)
 
 def load_features(dir, feat_name, filenames):
-    sample = None;
-    index = 0;
-    while sample is None or len(sample.shape) == 0:
-        sample = np.load(dir + feat_name + '/' + filenames[index] + ".npy", allow_pickle=True)
-    
     all_features = []
     index = 0
     for filename in tqdm(filenames):
@@ -52,7 +47,7 @@ def load_features(dir, feat_name, filenames):
 
     return all_features;
 
-def load_all_features(dir, filenames, load_sift = False, load_color=True, load_gabor = True):
+def load_all_features(dir, filenames, load_sift=False, load_color=True, load_gabor=True, load_bow=True, load_lbp=True):
     gabor = None;
     color = None;
     lbp = None;
@@ -75,11 +70,12 @@ def load_all_features(dir, filenames, load_sift = False, load_color=True, load_g
         except:
             print('No color features found')
 
-    try:
-        lbp = load_features(dir, 'lbp', filenames);
-        all_features = concat(all_features, lbp, axis=1);
-    except:
-        print('No lbp features found')
+    if load_lbp:
+        try:
+            lbp = load_features(dir, 'lbp', filenames);
+            all_features = concat(all_features, lbp, axis=1);
+        except:
+            print('No lbp features found')
 
     if load_sift:
         try:
@@ -89,11 +85,12 @@ def load_all_features(dir, filenames, load_sift = False, load_color=True, load_g
         except:
             print('No sift features found')
 
-    try:
-        bow = load_features(dir, 'bow_features', filenames)
-        all_features = concat(all_features, bow, axis=1);
-    except:
-        print('No bow features found')
+    if load_bow:
+        try:
+            bow = load_features(dir, 'bow_features', filenames)
+            all_features = concat(all_features, bow, axis=1);
+        except:
+            print('No bow features found')
     
     with open(dir + 'kmeans.pkl', "rb") as f:
         kmeans = pickle.load(f);
