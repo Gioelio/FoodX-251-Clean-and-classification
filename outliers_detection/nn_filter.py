@@ -34,9 +34,9 @@ class NN_filter:
         model = None
 
         if self.model_name == 'efficient_net':
-            cut_layer_name = 'block7a_se_reduce'
-            base_model = keras.applications.EfficientNetB0(include_top=True, weights='imagenet')
-            self.preprocess_fun = lambda x: keras.applications.efficientnet.preprocess_input(x)
+            cut_layer_name = 'avg_pool'
+            base_model = keras.applications.EfficientNetV2B0(include_top=True, weights='imagenet')
+            self.preprocess_fun = lambda x: keras.applications.efficientnet_v2.preprocess_input(x)
             model = keras.Model(inputs=base_model.input, outputs=base_model.get_layer(cut_layer_name).output)
 
         ## resnet definition
