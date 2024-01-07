@@ -19,5 +19,6 @@ class ClassificationWindow(QtWidgets.QMainWindow):
             ordered_classes, prediction, classnames = classify_image(filename)
             result_string = ""
             for i in range(10):
-                result_string += classnames[ordered_classes[i]] + ": " + "{0:.4f}".format(prediction[i] * 100) + "%\n"
+                print(classnames[ordered_classes[i]], prediction[i])
+                result_string += classnames[ordered_classes[i]] + ": " + "{0:.4f}".format(prediction[ordered_classes[i]] * 100) + "%\n"
             self.results_label.setText(result_string)
