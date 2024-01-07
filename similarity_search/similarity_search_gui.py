@@ -3,6 +3,7 @@ import cv2 as cv
 import sys
 import os
 import numpy as np
+from tensorflow import keras
 
 sys.path.append('..')
 
@@ -11,8 +12,8 @@ from similarity_search.neural_similarity_search import find_similar, find_simila
 from handcrafted_extraction import load_all_features
 
 HANDCRAFTED_FEATURES = 'dataset/handcrafted/'
-NN_FEATURES = 'similarity_search/extracted_features/efficient_net_similarity'
-NN_FILENAMES = 'similarity_search/extracted_features/efficient_net_similarity_filenames.csv'
+NN_FEATURES = 'similarity_search/extracted_features/efficient_net_tuned_similarity'
+NN_FILENAMES = 'similarity_search/extracted_features/efficient_net_tuned_similarity_filenames.csv'
 IMAGE_DIR = 'dataset/complete/'
 
 
@@ -32,7 +33,9 @@ def find_images_from_gui(query_path, features_handcrafted, features_nn, filename
     img = cv.cvtColor(img, cv.COLOR_BGR2RGB);
 
     image_limit = 1000
-    nn_most_similar, distances = find_similar(build_feature_extractor(EfficientNetV2B0, 'top_dropout'), query_path, features_nn, filenames, preprocess_input, output_number=image_limit)
+    model = keras.models.load_model('classification/tuned_models/efficientnet_v2_cosine')
+    model = keras.Sequential(model.layers[:-1])
+    nn_most_similar, distances = find_similar(model, query_path, features_nn, filenames, preprocess_input, output_number=image_limit)
     intersection = [];
     if features_handcrafted is not None:
         handcrafted_most_similar, distances = find_similar_handcrafted(IMAGE_DIR, features_handcrafted, query_path, False, output_number=image_limit)
