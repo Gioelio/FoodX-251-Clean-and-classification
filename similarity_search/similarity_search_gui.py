@@ -8,7 +8,7 @@ from tensorflow import keras
 sys.path.append('..')
 
 from keras.applications.efficientnet_v2 import EfficientNetV2B0, preprocess_input
-from similarity_search.neural_similarity_search import find_similar, find_similar_handcrafted
+from similarity_search.neural_similarity_search import find_similar, find_similar_handcrafted, filter_images_not_in_same_class
 from handcrafted_extraction import load_all_features
 
 HANDCRAFTED_FEATURES = 'dataset/handcrafted/'
@@ -16,8 +16,9 @@ NN_FEATURES = 'similarity_search/extracted_features/efficient_net_tuned_similari
 NN_FILENAMES = 'similarity_search/extracted_features/efficient_net_tuned_similarity_filenames.csv'
 IMAGE_DIR = 'dataset/complete/'
 
-FEATURE_EXTRACTOR = keras.models.load_model('classification/tuned_models/efficientnet_v2_cosine')
-FEATURE_EXTRACTOR = keras.Sequential(FEATURE_EXTRACTOR.layers[:-1])
+#MODEL = keras.models.load_model('classification/tuned_models/efficientnet_v2_cosine')
+#FEATURE_EXTRACTOR = keras.Sequential(MODEL.layers[:-1])
+#PREDICTIONS = pd.read_pickle('similarity_search/extracted_features/predictions.pickle')
 
 def load_images_for_gui(type='nn'):
     if type == 'nn':
@@ -45,6 +46,8 @@ def find_images_from_gui(query_path, features_handcrafted, features_nn, filename
     most_similar_filenames = intersection if use_intersection else most_similar_filenames
 
     most_similar_filenames = nn_most_similar
+    #most_similar_filenames = filter_images_not_in_same_class(PREDICTIONS, MODEL, preprocess_input, query_path, most_similar_filenames, 0.7)
+    
     most_similar_filenames = [IMAGE_DIR + filename for filename in most_similar_filenames];
 
     return most_similar_filenames;
