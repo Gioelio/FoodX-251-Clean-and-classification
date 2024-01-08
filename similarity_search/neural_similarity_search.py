@@ -43,7 +43,7 @@ def find_similar(feature_extractor, query_image_path, database_features, databas
     if norm:
         extracted_query = normalize(extracted_query)
 
-    distances = cdist(extracted_query, database_features)[0]
+    distances = cdist(extracted_query, database_features, 'cosine')[0]
     most_similar_indices = np.argsort(distances)[0:output_number]
 
     return database_names[most_similar_indices], distances[most_similar_indices]
