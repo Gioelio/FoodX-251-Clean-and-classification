@@ -70,3 +70,34 @@ def find_similar_handcrafted(images_dir, features, query_path, norm=True, output
 
     return df['filenames'][most_similar].values, distances[most_similar]
 
+
+def order_prediction(prediction, significance_threshold=None):
+    ordered_classes = np.argsort(-prediction)
+    prediction = prediction[ordered_classes]
+
+    if significance_threshold is not None:
+        cum_prob = prediction.cumsum()
+        cum_prob = [(x, i) for x, i in enumerate(cum_prob)]
+        cum_prob = [pair for pair in cum_prob if pair[1] > significance_threshold][0]
+        index_limit = cum_prob[0] + 1;
+        return prediction[:index_limit], ordered_classes[:index_limit]
+    
+    return prediction, ordered_classes
+
+def filter_images_not_in_same_class(predictions, model, preprocess_input, query_path, most_similar_filenames, significance_threshold=0.7, limit_number_of_classes=5):
+    img = cv.imread(query_path)
+    img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
+    img = cv.resize(img, (224, 224))
+    img = preprocess_input(img)
+    img = np.expand_dims(img, 0)
+    query_pred = model.predict(img, verbose=0)[0]
+
+    pred, ordered_classes = order_prediction(query_pred, significance_threshold)
+    pred = pred[:limit_number_of_classes]
+    ordered_classes = ordered_classes[:limit_number_of_classes]
+
+    valid = predictions[predictions['filenames'].isin(most_similar_filenames)]
+
+    mask = [len(np.intersect1d(prediction, ordered_classes)) > 0 for prediction in valid['labels']]
+    valid = valid[mask]
+    return valid['filenames'].values.tolist();
