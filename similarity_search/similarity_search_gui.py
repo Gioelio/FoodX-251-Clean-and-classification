@@ -13,11 +13,11 @@ from handcrafted_extraction import load_all_features
 from vit_keras import vit
 
 HANDCRAFTED_FEATURES = 'dataset/handcrafted/'
-EN_FEATURES = 'similarity_search/extracted_features/efficient_net_extended_similarity'
-EN_FILENAMES = 'similarity_search/extracted_features/efficient_net_extended_similarity_filenames.csv'
+EN_FEATURES = 'similarity_search/extracted_features/efficient_net_extended_similarity_test'
+EN_FILENAMES = 'similarity_search/extracted_features/efficient_net_extended_similarity_test_filenames.csv'
 
-VIT_FEATURES = 'similarity_search/extracted_features/vitb16_extended_similarity'
-VIT_FILENAMES = 'similarity_search/extracted_features/vitb16_extended_similarity_filenames.csv'
+VIT_FEATURES = 'similarity_search/extracted_features/vitb16_extended_similarity_test'
+VIT_FILENAMES = 'similarity_search/extracted_features/vitb16_extended_similarity_test_filenames.csv'
 
 IMAGE_DIR = 'dataset/complete/'
 
@@ -47,28 +47,41 @@ def find_images_from_gui(query_path, features_handcrafted, features_nn, filename
     img = cv.imread(query_path)
     img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
 
-    image_limit = 1000
+    image_limit = 10000
     vit_most_similar, vit_distances = find_similar(VIT_FEATURE_EXTRACTOR, query_path, features_nn[0], filenames,
                                                    vit.preprocess_inputs, output_number=image_limit)
     en_most_similar, en_distances = find_similar(EN_FEATURE_EXTRACTOR, query_path, features_nn[1], filenames,
                                                    preprocess_input, output_number=image_limit)
 
-    nn_most_similar = []
-    i = 0
-    j = 0
-    while i + j <= image_limit:
-        while vit_most_similar[i] in nn_most_similar:
-            i += 1
-        while en_most_similar[j] in nn_most_similar:
-            j += 1
-        if vit_distances[i] < en_distances[j]:
-            nn_most_similar.append(vit_most_similar[i])
-            i += 1
-        else:
-            nn_most_similar.append(en_most_similar[j])
-            j += 1
+    intersection = np.intersect1d(vit_most_similar, en_most_similar)
+    sums = {}
+    for el in intersection:
+        i = np.where(vit_most_similar == el)
+        sums[el] = vit_distances[i]
+        j = np.where(en_most_similar == el)
+        sums[el] += en_distances[j]
 
-    intersection = []
+    print(sums)
+
+    nn_most_similar = {k: v for k, v in sorted(sums.items(), key=lambda item: item[1])}
+    print(nn_most_similar)
+
+    # i = 0
+    # j = 0
+    # while i + j < image_limit:
+    #     # while vit_most_similar[i] in nn_most_similar:
+    #     #     i += 1
+    #     # while en_most_similar[j] in nn_most_similar:
+    #     #     j += 1
+    #     # if vit_distances[i] < en_distances[j]:
+    #     if False:
+    #         nn_most_similar.append(vit_most_similar[i])
+    #         i += 1
+    #     else:
+    #         nn_most_similar.append(en_most_similar[j])
+    #         j += 1
+
+
     if features_handcrafted is not None:
         handcrafted_most_similar, distances = find_similar_handcrafted(IMAGE_DIR, features_handcrafted, query_path,
                                                                        False, output_number=image_limit)
