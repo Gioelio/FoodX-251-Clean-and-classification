@@ -124,13 +124,16 @@ def create_clean_trainset(train_dir, clean_train_dir, clean_train_names, clean_t
             shutil.copy(train_dir + name, class_directory + name)
 
 
-def create_collage_with_random_imgs(folder_name, save_dir, n=10, image_names = None):
+def create_collage_with_random_imgs(folder_name, save_dir, n=10, image_names=None, random=True):
     if image_names is not None:
         all_images_names = image_names;
     else:
         all_images_names = os.listdir(folder_name);
 
-    index = np.random.randint(all_images_names.shape[0], size= n * n)
+    if random:
+        index = np.random.randint(all_images_names.shape[0], size= n * n)
+    else:
+        index = range(0, n*n)
 
     for i in range(len(index)):
         example = cv.imread(folder_name + all_images_names[index[i]])
@@ -139,9 +142,10 @@ def create_collage_with_random_imgs(folder_name, save_dir, n=10, image_names = N
         plt.axis('off')
         plt.imshow(example)
 
-    next_name = os.listdir(save_dir)
-	
-    filename = save_dir + 'collage' + str(len(next_name)) + '.png'
-    plt.savefig(filename)
+    if save_dir is not None:
+        next_name = os.listdir(save_dir)
+        filename = save_dir + 'collage' + str(len(next_name)) + '.png'
+        plt.savefig(filename)
+
     plt.show()
     plt.close()
