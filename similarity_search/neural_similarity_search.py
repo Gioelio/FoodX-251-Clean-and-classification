@@ -53,7 +53,7 @@ def find_similar_handcrafted(images_dir, features, query_path, norm=True, output
     import os
 
     if norm:
-        features = featuers(normalize);
+        features = features(normalize);
 
     arr = []
     for feat in features:
