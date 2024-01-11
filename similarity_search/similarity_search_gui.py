@@ -4,7 +4,6 @@ import sys
 import os
 import numpy as np
 from tensorflow import keras
-from sklearn.preprocessing import normalize
 
 sys.path.append('..')
 
@@ -33,6 +32,8 @@ EN_FEATURE_EXTRACTOR = keras.models.load_model('classification/tuned_models/effi
 EN_FEATURE_EXTRACTOR = keras.Sequential(EN_FEATURE_EXTRACTOR.layers[:-1])
 
 BASE_FEATURES_EXTRACTOR = build_feature_extractor(EfficientNetV2B0, 'block6h_se_reduce')
+
+PREDICTIONS = pd.load('')
 
 
 def load_images_for_gui(type='nn'):
@@ -67,11 +68,6 @@ def find_images_from_gui(query_path, features_handcrafted, features_nn, filename
                                                      preprocess_input, output_number=image_limit)
 
     intersection = np.intersect1d(vit_most_similar, en_most_similar)
-    #intersection = np.intersect1d(intersection, base_most_similar)
-
-    vit_distances = vit_distances / np.linalg.norm(vit_distances)
-    en_distances = en_distances / np.linalg.norm(en_distances)
-    base_distances = base_distances / np.linalg.norm(base_distances)
 
     sums = {}
     for el in intersection:
