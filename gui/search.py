@@ -40,6 +40,7 @@ class SearchWindow(QtWidgets.QMainWindow):
 
     def load_images_in_grid(self, filename):
         print(filename)
+
         pixmap = QPixmap(filename)
         self.query_img.setPixmap(pixmap.scaledToWidth(200))
         self.query_img.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -51,7 +52,7 @@ class SearchWindow(QtWidgets.QMainWindow):
         row, col = 0, 0
         number_limit = 100
 
-        scrollAreaWidget = QWidget()
+        scrollAreaWidget = QWidget(self)
         grid_layout = QGridLayout(scrollAreaWidget)
         for path in most_similar_filenames:
             if number_limit <= 0:
