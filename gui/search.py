@@ -2,7 +2,7 @@ from PyQt6 import QtWidgets, uic
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QFileDialog, QGridLayout, QLabel, QScrollArea, QWidget
-from similarity_search.similarity_search_gui import load_images_for_gui, find_images_from_gui
+from similarity_search.similarity_search_gui import load_images_features, find_similar_images
 
 
 class SearchWindow(QtWidgets.QMainWindow):
@@ -20,10 +20,9 @@ class SearchWindow(QtWidgets.QMainWindow):
         self.grid = self.findChild(QtWidgets.QScrollArea, 'gridImages');
         self.query_img = self.findChild(QtWidgets.QLabel, 'queryImg');
 
-        nn, filenames = load_images_for_gui()
+        nn, handcrafted_features = load_images_features()
         self.nn_features = nn;
-        self.filenames = filenames;
-        self.handcrafted = None
+        self.handcrafted = handcrafted_features
         self.filename = None;
 
     def slider_released(self):
@@ -48,7 +47,7 @@ class SearchWindow(QtWidgets.QMainWindow):
         use_intersection = False,
         use_nn = True
 
-        most_similar_filenames = find_images_from_gui(filename, self.handcrafted, self.nn_features, self.filenames, use_intersection, use_nn, self.slider.value()/10)
+        most_similar_filenames = find_similar_images(filename, self.handcrafted, self.nn_features, use_intersection, use_nn, self.slider.value()/10)
         row, col = 0, 0
         number_limit = 100
 
@@ -72,6 +71,4 @@ class SearchWindow(QtWidgets.QMainWindow):
 
         self.filename = filename
         self.grid.setWidget(scrollAreaWidget);
-
-        self.setGeometry(100, 100, 800, 600)
             

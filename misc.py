@@ -4,6 +4,7 @@ import os
 import shutil
 import cv2 as cv
 import matplotlib.pyplot as plt
+from tensorflow import keras
 
 def load(filename, column=1, stratified_sample_rate=1):
     dataframe = pd.read_csv(filename, names=['filename', 'label'], header=None)
@@ -149,3 +150,21 @@ def create_collage_with_random_imgs(folder_name, save_dir, n=10, image_names=Non
 
     plt.show()
     plt.close()
+
+
+def import_model(abs_path):
+    model = import_general(abs_path, lambda x: keras.models.load_model(x))
+
+    return model;
+
+def import_general(abs_path, import_function):
+    obj = None
+    if os.path.exists(abs_path):
+        obj = import_function(abs_path)
+    if os.path.exists('../' + abs_path):
+        obj = import_function('../' + abs_path)
+    
+    if obj is None:
+        raise Exception('No object found at: ' + abs_path )
+
+    return obj;

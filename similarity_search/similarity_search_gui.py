@@ -12,6 +12,7 @@ from similarity_search.neural_similarity_search import find_similar, find_simila
 from handcrafted_extraction import load_all_features
 from feature_extraction import build_feature_extractor 
 from vit_keras import vit
+from misc import import_model, import_general
 
 HANDCRAFTED_FEATURES = 'dataset/handcrafted/'
 EN_FEATURES = 'similarity_search/extracted_features/efficient_net_extended_similarity'
@@ -25,46 +26,40 @@ VIT_FILENAMES = 'similarity_search/extracted_features/vitb16_extended_similarity
 
 IMAGE_DIR = 'dataset/complete/'
 
-VIT_FEATURE_EXTRACTOR = keras.models.load_model('classification/tuned_models/ViTb16_noise_extended')
+VIT_FEATURE_EXTRACTOR = import_model('classification/tuned_models/ViTb16_noise_extended')
 VIT_FEATURE_EXTRACTOR = keras.Sequential(VIT_FEATURE_EXTRACTOR.layers[:-1])
 
-EN_FEATURE_EXTRACTOR = keras.models.load_model('classification/tuned_models/efficientnet_v2_noise_extended')
+EN_FEATURE_EXTRACTOR = import_model('classification/tuned_models/efficientnet_v2_noise_extended')
 EN_FEATURE_EXTRACTOR = keras.Sequential(EN_FEATURE_EXTRACTOR.layers[:-1])
 
 BASE_FEATURES_EXTRACTOR = build_feature_extractor(EfficientNetV2B0, 'block6h_se_reduce')
 
-PREDICTIONS = pd.load('')
+
+def load_images_features(load_handcrafted = False):
+    vit_features = import_general(VIT_FEATURES + '.npy', lambda x: np.load(x))
+    en_features = import_general(EN_FEATURES + '.npy', lambda x: np.load(x))
+    base_features = import_general(BASE_FEATURES + '.npy', lambda x: np.load(x))
+    handcrafted_features = None
+    if load_handcrafted:
+        handcrafted_features, _ = import_general(HANDCRAFTED_FEATURES, lambda x: load_all_features(x, import_general(IMAGE_DIR, lambda x: os.listdir(x)),
+                                        load_color=True, load_lbp=True, load_gabor=False, load_sift=False, load_bow=False))
+
+    return (vit_features, en_features, base_features), handcrafted_features
 
 
-def load_images_for_gui(type='nn'):
-    if type == 'nn':
-        vit_features = np.load(VIT_FEATURES + '.npy')
-        en_features = np.load(EN_FEATURES + '.npy')
-        base_features = np.load(BASE_FEATURES + '.npy')
-    else:
-        features, _ = load_all_features(HANDCRAFTED_FEATURES, os.listdir(IMAGE_DIR), load_color=True, load_lbp=True,
-                                        load_gabor=False, load_sift=False, load_bow=False)
-
-    filenames = pd.read_csv(VIT_FILENAMES, header=None).iloc[:, 1].values
-
-    return (vit_features, en_features, base_features), filenames
-
-
-def find_images_from_gui(query_path, features_handcrafted, features_nn, filenames, use_intersection, use_nn, base_weight=0.5):
+def find_similar_images(query_path, features_handcrafted, features_nn, use_intersection, use_nn, base_weight=0.5):
     img = cv.imread(query_path)
     img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
-
-    print('base_weight: ', base_weight)
-
     image_limit = 10000
-    vit_most_similar, vit_distances = find_similar(VIT_FEATURE_EXTRACTOR, query_path, features_nn[0], filenames,
+    import_filenames = lambda path: import_general(path, lambda x: pd.read_csv(x, header=None).iloc[:, 1].values)
+
+    vit_most_similar, vit_distances = find_similar(VIT_FEATURE_EXTRACTOR, query_path, features_nn[0], import_filenames(VIT_FILENAMES),
                                                    vit.preprocess_inputs, output_number=image_limit)
-    en_most_similar, en_distances = find_similar(EN_FEATURE_EXTRACTOR, query_path, features_nn[1], filenames,
+    
+    en_most_similar, en_distances = find_similar(EN_FEATURE_EXTRACTOR, query_path, features_nn[1], import_filenames(EN_FILENAMES),
                                                    preprocess_input, output_number=image_limit)
     
-    base_filenames = pd.read_csv(BASE_FILENAMES, header=None).iloc[:, 1].values
-
-    base_most_similar, base_distances = find_similar(BASE_FEATURES_EXTRACTOR, query_path, features_nn[2], base_filenames,
+    base_most_similar, base_distances = find_similar(BASE_FEATURES_EXTRACTOR, query_path, features_nn[2], import_filenames(BASE_FILENAMES),
                                                      preprocess_input, output_number=image_limit)
 
     intersection = np.intersect1d(vit_most_similar, en_most_similar)

@@ -4,16 +4,15 @@ import cv2 as cv
 from vit_keras import vit
 from keras.applications.efficientnet_v2 import preprocess_input
 from scipy.stats import entropy
-from misc import load_class_labels
+from misc import load_class_labels, import_model
 
 
 PRETRAINED_VIT_PATH = "classification/tuned_models/ViTb16_noise_extended"
 PRETRAINED_EFFICIENTNET_PATH = "classification/tuned_models/efficientnet_v2_noise_extended"
 LABEL_NAMES_PATH = "dataset/classes.txt"
 
-EN_MODEL = keras.models.load_model(PRETRAINED_EFFICIENTNET_PATH)
-VIT_MODEL = keras.models.load_model(PRETRAINED_VIT_PATH)
-
+EN_MODEL = import_model(PRETRAINED_EFFICIENTNET_PATH)
+VIT_MODEL = import_model(PRETRAINED_VIT_PATH)
 
 def classify_image(path):
     classnames = load_class_labels('dataset/classes.txt')
