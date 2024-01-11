@@ -13,8 +13,8 @@ class SearchWindow(QtWidgets.QMainWindow):
         self.button_select.clicked.connect(self.select_clicked);
         self.slider = self.findChild(QtWidgets.QSlider, "baseWeight")
         self.slider.sliderReleased.connect(self.slider_released);
-        self.slider.setMinimum(1)
-        self.slider.setMaximum(9)
+        self.slider.setMinimum(0)
+        self.slider.setMaximum(10)
         self.slider.setValue(5)
         self.slider.setTickInterval(1)
         self.grid = self.findChild(QtWidgets.QScrollArea, 'gridImages');
@@ -40,6 +40,8 @@ class SearchWindow(QtWidgets.QMainWindow):
 
     def load_images_in_grid(self, filename):
         print(filename)
+        scrollAreaWidget = QWidget(self)
+        self.grid.setWidget(scrollAreaWidget)
 
         pixmap = QPixmap(filename)
         self.query_img.setPixmap(pixmap.scaledToWidth(200))

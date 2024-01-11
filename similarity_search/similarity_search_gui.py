@@ -32,7 +32,7 @@ VIT_FEATURE_EXTRACTOR = keras.Sequential(VIT_FEATURE_EXTRACTOR.layers[:-1])
 EN_FEATURE_EXTRACTOR = import_model('classification/tuned_models/efficientnet_v2_noise_extended')
 EN_FEATURE_EXTRACTOR = keras.Sequential(EN_FEATURE_EXTRACTOR.layers[:-1])
 
-BASE_FEATURES_EXTRACTOR = build_feature_extractor(EfficientNetV2B0, 'block6h_se_reduce')
+BASE_FEATURES_EXTRACTOR = build_feature_extractor(EfficientNetV2B0, 'top_dropout')
 
 
 def load_images_features(load_handcrafted = False):
@@ -47,38 +47,53 @@ def load_images_features(load_handcrafted = False):
     return (vit_features, en_features, base_features), handcrafted_features
 
 
-def find_similar_images(query_path, features_handcrafted, features_nn, use_intersection, use_nn, base_weight=0.5):
+def find_similar_images(query_path, features_handcrafted, features_nn, use_intersection, use_nn, base_weight=0.5, verbose = 1):
     img = cv.imread(query_path)
     img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
     image_limit = 10000
     import_filenames = lambda path: import_general(path, lambda x: pd.read_csv(x, header=None).iloc[:, 1].values)
 
-    print('base_weight: ', base_weight)
-
-    vit_most_similar, vit_distances = find_similar(VIT_FEATURE_EXTRACTOR, query_path, features_nn[0], import_filenames(VIT_FILENAMES),
-                                                   vit.preprocess_inputs, output_number=image_limit)
-    
-    en_most_similar, en_distances = find_similar(EN_FEATURE_EXTRACTOR, query_path, features_nn[1], import_filenames(EN_FILENAMES),
+    if base_weight != 1:
+        vit_most_similar, vit_distances = find_similar(VIT_FEATURE_EXTRACTOR, query_path, features_nn[0], import_filenames(VIT_FILENAMES),
+                                                    vit.preprocess_inputs, output_number=image_limit)
+        
+        en_most_similar, en_distances = find_similar(EN_FEATURE_EXTRACTOR, query_path, features_nn[1], import_filenames(EN_FILENAMES),
                                                    preprocess_input, output_number=image_limit)
-    
-    base_most_similar, base_distances = find_similar(BASE_FEATURES_EXTRACTOR, query_path, features_nn[2], import_filenames(BASE_FILENAMES),
+
+        intersection = np.intersect1d(vit_most_similar, en_most_similar)
+
+    if base_weight != 0:
+        base_most_similar, base_distances = find_similar(BASE_FEATURES_EXTRACTOR, query_path, features_nn[2], import_filenames(BASE_FILENAMES),
                                                      preprocess_input, output_number=image_limit)
 
-    #intersection = np.intersect1d(vit_most_similar, en_most_similar)
 
     #vit_distances = vit_distances / np.linalg.norm(vit_distances);
     #en_distances = en_distances / np.linalg.norm(en_distances);
     #base_distances = base_distances / np.linalg.norm(base_distances);
 
     sums = {}
-    """for el in intersection:
-        i = np.where(vit_most_similar == el)
-        sums[el] = vit_distances[i] * (1 - base_weight) / 2
-        j = np.where(en_most_similar == el)
-        sums[el] += en_distances[j] * (1 - base_weight) / 2"""
+    if base_weight != 1:
+        for el in intersection:
+            i = np.where(vit_most_similar == el)
+            sums[el] = (vit_distances[i] / 2)
+            j = np.where(en_most_similar == el)
+            sums[el] += (en_distances[j] / 2)
+
+            sums[el] = sums[el] * (1 - base_weight)
+
+    if base_weight != 0:
+        for j, el in enumerate(base_most_similar):
+            value = base_distances[j] * base_weight;
+            if el in sums.keys():
+                sums[el] += value
+            else:
+                sums[el] = value
+    
+    """
+
     most_similar_arr = [vit_most_similar, en_most_similar, base_most_similar]
     distances_arr = [vit_distances, en_distances, base_distances]
-    weights = [(1 - base_weight) / 3, (1 - base_weight) / 3, base_weight]
+    weights = [(1 - base_weight), (1 - base_weight), base_weight]
 
     for i in range(0, 3):
         most_similar = most_similar_arr[i];
@@ -91,6 +106,7 @@ def find_similar_images(query_path, features_handcrafted, features_nn, use_inter
                 sums[el] += value
             else:
                 sums[el] = value
+    """
 
     nn_most_similar = {k: v for k, v in sorted(sums.items(), key=lambda item: item[1])}
 
@@ -122,6 +138,7 @@ def find_similar_images(query_path, features_handcrafted, features_nn, use_inter
     
     most_similar_filenames = [IMAGE_DIR + filename for filename in most_similar_filenames]
 
-    print('end')
+    if verbose:
+        print('end')
 
     return most_similar_filenames
