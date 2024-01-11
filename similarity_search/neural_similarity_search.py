@@ -53,7 +53,7 @@ def find_similar_handcrafted(images_dir, features, query_path, norm=True, output
     import os
 
     if norm:
-        features = featuers(normalize);
+        features = features(normalize);
 
     arr = []
     for feat in features:
@@ -101,4 +101,4 @@ def filter_images_not_in_same_class(predictions, model, preprocess_input, query_
     mask = [len(np.intersect1d(prediction, ordered_classes)) > 0 for prediction in valid['labels']]
     valid = valid[mask]
     valid = valid.sort_values(by='filenames', key=lambda x: x.map({k: i for i, k in enumerate(most_similar_filenames)}))
-    return valid['filenames'].values.tolist();
+    return valid['filenames'].values.tolist(), mask;

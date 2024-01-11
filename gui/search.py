@@ -2,7 +2,7 @@ from PyQt6 import QtWidgets, uic
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QFileDialog, QGridLayout, QLabel, QScrollArea, QWidget
-from similarity_search.similarity_search_gui import load_images_for_gui, find_images_from_gui
+from similarity_search.similarity_search_gui import load_images_features, find_similar_images
 
 
 class SearchWindow(QtWidgets.QMainWindow):
@@ -11,14 +11,23 @@ class SearchWindow(QtWidgets.QMainWindow):
         uic.loadUi('gui/similarity.ui', self)
         self.button_select = self.findChild(QtWidgets.QPushButton, 'buttonSelect')
         self.button_select.clicked.connect(self.select_clicked);
+        self.slider = self.findChild(QtWidgets.QSlider, "baseWeight")
+        self.slider.sliderReleased.connect(self.slider_released);
+        self.slider.setMinimum(1)
+        self.slider.setMaximum(9)
+        self.slider.setValue(5)
+        self.slider.setTickInterval(1)
         self.grid = self.findChild(QtWidgets.QScrollArea, 'gridImages');
-        self.query_img = self.findChild(QtWidgets.QLabel, 'queryImg')
+        self.query_img = self.findChild(QtWidgets.QLabel, 'queryImg');
 
-        nn, filenames = load_images_for_gui()
+        nn, handcrafted_features = load_images_features()
         self.nn_features = nn;
-        self.filenames = filenames;
-        self.handcrafted = None
+        self.handcrafted = handcrafted_features
+        self.filename = None;
 
+    def slider_released(self):
+        if self.filename is not None:
+            self.load_images_in_grid(self.filename)
 
     def select_clicked(self):
         dialog = QFileDialog()
@@ -26,39 +35,41 @@ class SearchWindow(QtWidgets.QMainWindow):
         dialog.setNameFilter("Immagini (*.jpg *.png *.jpeg *.bmp);; Tutti i file (*.*)")
         if dialog.exec():
             filename = dialog.selectedFiles()[0]
-            print(filename)
-            pixmap = QPixmap(filename)
-            self.query_img.setPixmap(pixmap.scaledToWidth(200))
-            self.query_img.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.load_images_in_grid(filename)
+            
 
-            use_intersection = False,
-            use_nn = True
+    def load_images_in_grid(self, filename):
+        print(filename)
 
-            most_similar_filenames = find_images_from_gui(filename, self.handcrafted, self.nn_features, self.filenames, use_intersection, use_nn)
-            row, col = 0, 0
-            number_limit = 100
+        pixmap = QPixmap(filename)
+        self.query_img.setPixmap(pixmap.scaledToWidth(200))
+        self.query_img.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-            scrollAreaWidget = QWidget()
-            grid_layout = QGridLayout(scrollAreaWidget)
-            for path in most_similar_filenames:
-                if number_limit <= 0:
-                    continue;
-                number_limit -= 1;
-                pixmap = QPixmap(path)
-                label = QLabel(self)
-                label.setPixmap(pixmap.scaledToWidth(200))
-                label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        use_intersection = False,
+        use_nn = True
 
-                grid_layout.addWidget(label, row, col)
-                col += 1;
+        most_similar_filenames = find_similar_images(filename, self.handcrafted, self.nn_features, use_intersection, use_nn, self.slider.value()/10)
+        row, col = 0, 0
+        number_limit = 100
 
-                if col == 2:
-                    col = 0;
-                    row += 1
+        scrollAreaWidget = QWidget(self)
+        grid_layout = QGridLayout(scrollAreaWidget)
+        for path in most_similar_filenames:
+            if number_limit <= 0:
+                continue;
+            number_limit -= 1;
+            pixmap = QPixmap(path)
+            label = QLabel(self)
+            label.setPixmap(pixmap.scaledToWidth(200))
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-            widget = QWidget()
-            self.grid.setWidget(scrollAreaWidget);
+            grid_layout.addWidget(label, row, col)
+            col += 1;
 
-            self.setGeometry(100, 100, 800, 600)
+            if col == 2:
+                col = 0;
+                row += 1
 
+        self.filename = filename
+        self.grid.setWidget(scrollAreaWidget);
             
