@@ -1,33 +1,38 @@
 import cv2 as cv
 import numpy as np
 
+
 def noise_removal(image):
     image = cv.cvtColor(image, cv.COLOR_BGR2YCrCb)
-    image[:, :, 1] = cv.fastNlMeansDenoising(image[:, :, 1], None, 25, 7, 21)
-    image[:, :, 2] = cv.fastNlMeansDenoising(image[:, :, 2], None, 25, 7, 21)
+
+    ksize = 15
+
+    image[:, :, 1] = cv.GaussianBlur(image[:, :, 1], (ksize, ksize), 9, None, 9)
+    image[:, :, 2] = cv.GaussianBlur(image[:, :, 2], (ksize, ksize), 9, None, 9)
+
     image = cv.cvtColor(image, cv.COLOR_YCrCb2BGR)
-    image = cv.bilateralFilter(image, 9, 130, 15)
-    image = cv.GaussianBlur(image, (3, 3), 10, None, 10)
+    image = cv.bilateralFilter(image, 11, 150, 15)
+    image = cv.GaussianBlur(image, (3, 3), 5, None, 5)
     return image
 
 
-def white_balance(image, method='simple', threshold=0.5):
-    if method == 'simple':
-        wb = cv.xphoto.createSimpleWB()
-        wb.setP(0.03)
-        image = wb.balanceWhite(image)
-    else:
-        gray = cv.cvtColor(image, cv.COLOR_BGR2YCrCb)[:, :, 0]
-        old_min = gray.min()
-        old_max = gray.max()
-        sat = (np.max(image, axis=2) - np.min(image, axis=2)) / np.max(image, axis=2)
-        sat[np.isnan(sat)] = 255
-        sat_threshold = np.percentile(sat.flatten(), (1 - threshold) * 100)
+def white_balance(image, threshold1=0.5, threshold2=0.5):
+    gray = cv.cvtColor(image, cv.COLOR_BGR2YCrCb)[:, :, 0]
+    sat = (np.max(image, axis=2) - np.min(image, axis=2)) / np.max(image, axis=2)
+    sat[np.isnan(sat)] = 0
 
+    if sat.mean() > 0.5:
+        sat_threshold = np.quantile(sat.flatten(), threshold1)
+        wb = cv.xphoto.createSimpleWB()
+
+        wb.setP(sat_threshold)
+        image = wb.balanceWhite(image)
+
+    else:
+        sat_threshold = np.quantile(sat.flatten(), (1 - threshold2))
         wb = cv.xphoto.createGrayworldWB()
         wb.setSaturationThreshold(sat_threshold)
         image = wb.balanceWhite(image)
-        image = contrast_stretch(image, 0, old_min, old_max)
 
     return image
 
@@ -51,6 +56,7 @@ def contrast_stretch(image, ignore_p=0, min_val=0, max_val=255):
     channel = 0
     maximum = np.percentile(image[:, :, channel], 100 - ignore_p)
     minimum = np.percentile(image[:, :, channel], ignore_p)
+
     if maximum <= minimum:
         maximum = image[:, :, channel].max()
         minimum = image[:, :, channel].min()
@@ -64,34 +70,56 @@ def contrast_stretch(image, ignore_p=0, min_val=0, max_val=255):
     return image
 
 
-def pipeline(image, wb='simple', wb_threshold=0.5):
+def gamma_correction(image, type):
+    y = cv.cvtColor(image, cv.COLOR_BGR2YCrCb)
+    q1 = np.quantile(y[:, :, 0], 0.5)
+    if type == 'low':
+        print(q1)
+        y[:, :, 0] = (y[:, :, 0] / 255.) ** 0.7 * 255
+    else:
+        y[:, :, 0] = (y[:, :, 0] / 255.) ** 1.3 * 255
+
+    image = cv.cvtColor(y, cv.COLOR_YCrCb2BGR)
+    return image
+
+
+def pipeline(image, wb_threshold=0.5, wb_threshold2=0.5):
     gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
     gradient = cv.Laplacian(gray, ddepth=3)
     mean, std = cv.meanStdDev(gradient)
+    image = white_balance(image, wb_threshold, wb_threshold2)
 
     blurred = cv.GaussianBlur(gray, (7, 7), 15, None, 15)
     count_low = blurred[blurred < 75].flatten().shape[-1]
     count_high = blurred[blurred > 180].flatten().shape[-1]
 
-    count_black = blurred[blurred < 20].flatten().shape[-1]
-    count_white = blurred[blurred > 230].flatten().shape[-1]
+    total_black_count = blurred[blurred <= 5].flatten().shape[-1]
+    total_white_count = blurred[blurred >= 250].flatten().shape[-1]
 
-    low_prop = (count_low - count_black) / (blurred.flatten().shape[-1] - count_black)
-    high_prop = (count_high - count_white) / (blurred.flatten().shape[-1] - count_white)
+    low_prop = (count_low - total_black_count) / (blurred.flatten().shape[-1] - total_black_count)
+    high_prop = (count_high - total_white_count) / (blurred.flatten().shape[-1] - total_white_count)
 
-    if low_prop > 0.4 or high_prop > 0.4:
+    if low_prop + high_prop > 0.7 and (low_prop > 0.5 and high_prop > 0.2):
         # cv.destroyAllWindows()
         # cv.imshow('before', image)
         # cv.waitKey(1)
         image = local_gamma_correction(image)
-        image = contrast_stretch(image, 1)
+        image = contrast_stretch(image, 2)
         # cv.imshow(str(low_prop) + " " + str(high_prop), image)
         # cv.waitKey(0)
 
-    image = white_balance(image, wb, wb_threshold)
+    elif low_prop > 0.7 or high_prop > 0.7:
+        # cv.destroyAllWindows()
+        # cv.imshow('before', image)
+        # cv.waitKey(1)
+        image = gamma_correction(image, 'low' if low_prop > 0.7 else 'high')
+        # cv.imshow(str(low_prop) + " " + str(high_prop), image)
+        # cv.waitKey(0)
+        pass
+
+    #
     if std[0, 0] > 100:
         image = noise_removal(image)
-        #contrast_stretch(image, 5)
-
+        # contrast_stretch(image, 5)
 
     return image
