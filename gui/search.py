@@ -2,7 +2,7 @@ from PyQt6 import QtWidgets, uic
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QFileDialog, QGridLayout, QLabel, QScrollArea, QWidget
-from similarity_search.similarity_search_gui import load_images_features, find_similar_images
+from similarity_search.similarity_search_gui import load_images_features, find_similar_images, find_similar_distances, weight_filenames
 
 
 class SearchWindow(QtWidgets.QMainWindow):
@@ -35,6 +35,11 @@ class SearchWindow(QtWidgets.QMainWindow):
         dialog.setNameFilter("Immagini (*.jpg *.png *.jpeg *.bmp);; Tutti i file (*.*)")
         if dialog.exec():
             filename = dialog.selectedFiles()[0]
+            vit_info, en_info, base_info, _, intersection = find_similar_distances(filename, self.nn_features)
+            self.vit_info = vit_info
+            self.en_info = en_info
+            self.base_info = base_info
+            self.intersection = intersection
             self.load_images_in_grid(filename)
             
 
@@ -50,7 +55,7 @@ class SearchWindow(QtWidgets.QMainWindow):
         use_intersection = False,
         use_nn = True
 
-        most_similar_filenames = find_similar_images(filename, self.handcrafted, self.nn_features, use_intersection, use_nn, self.slider.value()/10)
+        most_similar_filenames = weight_filenames(self.vit_info, self.en_info, self.base_info, (None, None), self.intersection, self.slider.value()/10);
         row, col = 0, 0
         number_limit = 100
 

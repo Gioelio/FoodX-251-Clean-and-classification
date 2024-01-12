@@ -52,16 +52,23 @@ def load_images_features(load_handcrafted=False):
     return (vit_features, en_features, base_features), handcrafted_features
 
 
-def find_similar_images(query_path, features_handcrafted, features_nn, use_intersection, use_nn, base_weight=0.5,
-                        verbose=1):
+def find_similar_distances(query_path, features_nn, base_weight=None, features_handcrafted=None):
     image_limit = 10000
     import_filenames = lambda path: import_general(path, lambda x: pd.read_csv(x, header=None).iloc[:, 1].values)
 
     base_most_similar = None
     vit_most_similar = None
+    en_most_similar = None
+    handcrafted_most_similar = None
+    
+    vit_distances = None
+    en_distances = None
+    base_distances = None
+    handcrafted_distances = None
+
     intersection = None
 
-    if base_weight != 1:
+    if base_weight is None or base_weight != 1:
         vit_most_similar, vit_distances = find_similar(VIT_FEATURE_EXTRACTOR, query_path, features_nn[0],
                                                        import_filenames(VIT_FILENAMES),
                                                        vit.preprocess_inputs, output_number=image_limit)
@@ -70,7 +77,7 @@ def find_similar_images(query_path, features_handcrafted, features_nn, use_inter
                                                      preprocess_input, output_number=image_limit)
         intersection = np.intersect1d(vit_most_similar, en_most_similar)
 
-    if base_weight != 0:
+    if base_weight is None or base_weight != 0:
         base_most_similar, base_distances = find_similar(BASE_FEATURES_EXTRACTOR, query_path, features_nn[2],
                                                          import_filenames(BASE_FILENAMES),
                                                          preprocess_input, output_number=image_limit)
@@ -78,6 +85,21 @@ def find_similar_images(query_path, features_handcrafted, features_nn, use_inter
             intersection = np.intersect1d(intersection, base_most_similar)
         else:
             intersection = base_most_similar
+
+    if features_handcrafted is not None:
+        handcrafted_most_similar, handcrafted_distances = find_similar_handcrafted(IMAGE_DIR, features_handcrafted, query_path,
+                                                                       False, output_number=image_limit)
+
+        intersection = np.intersect1d(handcrafted_most_similar, nn_most_similar)
+
+    return (vit_most_similar, vit_distances), (en_most_similar, en_distances), (base_most_similar, base_distances), (handcrafted_most_similar, handcrafted_distances), intersection
+
+
+def weight_filenames(vit_info, en_info, base_info, hand_info, intersection, base_weight, use_nn=True, use_intersection=False, verbose=1):
+    (vit_most_similar, vit_distances) = vit_info;
+    (en_most_similar, en_distances) = en_info;
+    (base_most_similar, base_distances) = base_info;
+    (handcrafted_most_similar, handcrafted_distances) = hand_info;
 
     sums = {}
     for el in intersection:
@@ -94,52 +116,12 @@ def find_similar_images(query_path, features_handcrafted, features_nn, use_inter
             k = np.where(base_most_similar == el)
             sums[el] += base_distances[k] * ((1 - base_weight) if base_weight < 1 else 1)
 
-
-    """
-    
-        most_similar_arr = [vit_most_similar, en_most_similar, base_most_similar]
-        distances_arr = [vit_distances, en_distances, base_distances]
-        weights = [(1 - base_weight), (1 - base_weight), base_weight]
-    
-        for i in range(0, 3):
-            most_similar = most_similar_arr[i];
-            distance  = distances_arr[i];
-            weight = weights[i]
-            for el in most_similar:
-                j = np.where(most_similar == el)
-                value = distance[j] * weight;
-                if el in sums.keys():
-                    sums[el] += value
-                else:
-                    sums[el] = value
-        """
-
     nn_most_similar = {k: v for k, v in sorted(sums.items(), key=lambda item: item[1])}
-
-    # i = 0
-    # j = 0
-    # while i + j < image_limit:
-    #     # while vit_most_similar[i] in nn_most_similar:
-    #     #     i += 1
-    #     # while en_most_similar[j] in nn_most_similar:
-    #     #     j += 1
-    #     # if vit_distances[i] < en_distances[j]:
-    #     if False:
-    #         nn_most_similar.append(vit_most_similar[i])
-    #         i += 1
-    #     else:
-    #         nn_most_similar.append(en_most_similar[j])
-    #         j += 1
 
     most_similar_filenames = nn_most_similar
 
-    if features_handcrafted is not None:
-        handcrafted_most_similar, distances = find_similar_handcrafted(IMAGE_DIR, features_handcrafted, query_path,
-                                                                       False, output_number=image_limit)
-
-        intersection = np.intersect1d(handcrafted_most_similar, nn_most_similar)
-        most_similar_filenames = nn_most_similar if use_nn else handcrafted_most_similar
-        most_similar_filenames = intersection if use_intersection else most_similar_filenames
+    most_similar_filenames = nn_most_similar if use_nn else handcrafted_most_similar
+    most_similar_filenames = intersection if use_intersection else most_similar_filenames
 
     most_similar_filenames = [IMAGE_DIR + filename for filename in most_similar_filenames]
 
@@ -147,3 +129,11 @@ def find_similar_images(query_path, features_handcrafted, features_nn, use_inter
         print('end')
 
     return most_similar_filenames
+
+## deprecated
+def find_similar_images(query_path, features_handcrafted, features_nn, use_intersection, use_nn, base_weight=0.5,
+                        verbose=1):
+
+    vit_info, en_info, base_info, intersection = find_similar_distances(query_path, features_nn, verbose)
+    return weight_filenames(vit_info, en_info, base_info, intersection, base_weight, use_nn, use_intersection, verbose)
+    
