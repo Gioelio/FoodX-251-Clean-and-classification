@@ -73,11 +73,15 @@ def find_similar_images(query_path, features_handcrafted, features_nn, use_inter
 
     sums = {}
     if base_weight != 1:
+        en_keys = {}
+        vit_keys = {}
+        for i, name in enumerate(en_most_similar):
+            en_keys[name] = en_distances[i];
+        for i, name in enumerate(vit_most_similar):
+            vit_keys[name] = vit_distances[i];
+        
         for el in intersection:
-            i = np.where(vit_most_similar == el)
-            sums[el] = (vit_distances[i] / 2)
-            j = np.where(en_most_similar == el)
-            sums[el] += (en_distances[j] / 2)
+            sums[el] = (vit_keys[el] + en_keys[el]) / 2
 
             sums[el] = sums[el] * (1 - base_weight)
 
