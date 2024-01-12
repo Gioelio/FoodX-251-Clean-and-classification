@@ -39,7 +39,7 @@ def find_similar(feature_extractor, query_image_path, database_features, databas
     query_image = preprocessing(query_image)
     img_array = np.zeros((1, feature_extractor.input_shape[1], feature_extractor.input_shape[2], 3))
     img_array[0] = query_image
-    extracted_query = feature_extractor.predict(img_array)
+    extracted_query = feature_extractor.predict(img_array, verbose=0)
     if norm:
         extracted_query = normalize(extracted_query)
 
