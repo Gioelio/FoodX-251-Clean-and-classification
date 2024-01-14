@@ -3,7 +3,8 @@ import cv2 as cv
 from vit_keras import vit
 from keras.applications.efficientnet_v2 import preprocess_input
 from misc import load_class_labels, import_model
-
+from preprocessing import pipeline
+from brisque import brisque
 
 PRETRAINED_VIT_PATH = "classification/tuned_models/ViTb16_noise_extended"
 PRETRAINED_EFFICIENTNET_PATH = "classification/tuned_models/efficientnet_v2_noise_extended"
@@ -12,9 +13,17 @@ LABEL_NAMES_PATH = "dataset/classes.txt"
 EN_MODEL = import_model(PRETRAINED_EFFICIENTNET_PATH)
 VIT_MODEL = import_model(PRETRAINED_VIT_PATH)
 
+
 def classify_image(path):
     classnames = load_class_labels('dataset/classes.txt')
-    image = cv.imread(path)[:, :, ::-1]
+    image = cv.imread(path)
+
+    image = pipeline(image)
+    q = brisque.BRISQUE()
+    quality = q.score(image)
+    if quality >= 85:
+        raise Exception("The given input image has a quality score of {0:.2f}. That's too high!".format(quality))
+    image = image[:, :, ::-1]
     image = cv.resize(image, (224, 224))
     image = np.expand_dims(image, 0)
 
