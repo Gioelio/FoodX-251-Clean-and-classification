@@ -10,6 +10,7 @@ from misc import unroll_arrays
 import bag_of_words as bow
 import pickle
 from tqdm import tqdm
+from sklearn.preprocessing import normalize
 
 def store_features(images_dir, images_names, store_path, kmeans=None, sift_info=True, gabor_obj=True, color=True, lbp_info=True):
 
@@ -199,9 +200,16 @@ def compute_features(images_dir, images_names, kmeans=None, sift_info=True, gabo
     if sift_info is not None:
         sift_features = sift_features.get()
         unrolled = unroll_arrays(sift_features, sift_info['num_of_sample_kmeans']);
+        unrolled_normalized = normalize(unrolled, axis=1) # normalize each sample
         if kmeans is None:
-            kmeans = bow.fit(unrolled, vocabulary_size=sift_info['voc_size'], verbose=True, n_init=1, max_iter=sift_info['max_iter']);
-        bow_features = bow.predict(kmeans, sift_features);
+            kmeans = bow.fit(unrolled_normalized, vocabulary_size=sift_info['voc_size'], verbose=True, n_init=1, max_iter=sift_info['max_iter']);
+        sift_normalized = []
+        for feat in sift_features:
+            if feat is not None:
+                sift_normalized.append(normalize(feat));
+            else:
+                sift_normalized.append(None);
+        bow_features = bow.predict(kmeans, sift_normalized);
         all_features = concat(all_features, bow_features)
 
     if separated:
