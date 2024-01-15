@@ -87,7 +87,7 @@ def compute_low_high_prop(image):
     return low_prop, high_prop
 
 
-def pipeline(image, wb_threshold=0.5, wb_threshold2=0.5):
+def pipeline(image, wb_threshold=0.02, wb_threshold2=0.05):
     image = noise_removal(image)
 
     low_prop, high_prop = compute_low_high_prop(image)

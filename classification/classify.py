@@ -18,7 +18,7 @@ def classify_image(path):
     classnames = load_class_labels('dataset/classes.txt')
     image = cv.imread(path)
 
-    image = pipeline(image)
+    image = pipeline(image, 0.02, 0.05)
     q = brisque.BRISQUE()
     quality = q.score(image)
     if quality >= 85:
