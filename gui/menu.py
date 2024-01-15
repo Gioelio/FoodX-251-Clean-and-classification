@@ -13,11 +13,15 @@ class MainMenu(QtWidgets.QMainWindow):
         self.button_classification = self.findChild(QtWidgets.QPushButton, 'buttonClassification')
         self.button_similarity.clicked.connect(self.similarity_clicked)
         self.button_classification.clicked.connect(self.classification_clicked)
+        self.label_loading = self.findChild(QtWidgets.QLabel, 'labelLoading')
         self.show()
 
     def similarity_clicked(self):
+        self.label_loading.setText("Caricamento dei modelli...")
+        self.repaint()
         self.search_window = SearchWindow()
         self.search_window.show()
+        self.label_loading.setText("")
 
     def classification_clicked(self):
         self.classification_window = ClassificationWindow()
