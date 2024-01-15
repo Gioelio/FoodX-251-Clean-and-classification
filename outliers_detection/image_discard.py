@@ -71,7 +71,6 @@ def find_outliers_per_class(bow_mean, bow_cov, bow, labels, image_names, thresho
 
     return names, distances
 
-
 def find_outliers_median(features, labels, image_names, threshold=30):
     from sklearn.preprocessing import normalize
     classes = np.unique(labels)
@@ -84,8 +83,10 @@ def find_outliers_median(features, labels, image_names, threshold=30):
         median = np.median(normalized, axis=0)
 
         for image, name in zip(normalized, image_names[indices]):
-            d1 = np.linalg.norm((image - median))
-
+            # d1 = np.linalg.norm((image - median))
+            # d1 = np.sum(np.abs(median - image))
+            d1 = 1 - np.dot(image, median) / (np.linalg.norm(image) * np.linalg.norm(median))
+            
             if d1 >= threshold:
                 distances[c].append(d1)
                 names[c].append(name)
@@ -97,15 +98,13 @@ def find_outliers_median(features, labels, image_names, threshold=30):
         names[c] = names[c][_sorted]
     return names, distances
 
-
 def find_outliers_iter_median(features, labels, image_names, threshold=30, iter=10):
-    from tqdm.notebook import tqdm_notebook
     to_consider = np.ones((len(features)))
     classes = np.unique(labels)
     distances = [[] for _ in range(len(classes))]
     names = [[] for _ in range(len(classes))]
 
-    for _ in tqdm_notebook(range(iter)):
+    for _ in (range(iter)):
         features_to_consider = features[to_consider == 1]
         names_to_consider = image_names[to_consider == 1]
         labels_to_consider = labels[to_consider == 1]
@@ -142,17 +141,25 @@ def write_cleaned_csv(train_df, exclude_names, base_dir, filename='train_info_cl
     cleaned_df.to_csv(base_dir + filename + '.csv', header=False, index=False)
     return cleaned_df
 
-
 def discard_preprocessing(dir, image_names, labels, bw_threshold=0.9, no_gradient_threshold=0.83, zero_threshold=0.6,
-                          gradient_threshold=0.15, crop_size=0.6):
-
+                          gradient_threshold=0.15, crop_size=0.4):
+    from tqdm.notebook import tqdm_notebook
+    import cv2 as cv
     discarded_images = [[] for _ in range(251)]
     discarded_indices = []
 
     for i, (image_name, c) in tqdm_notebook(enumerate(zip(image_names, labels))):
         color_image = cv.imread(dir + image_name)
         image = cv.cvtColor(color_image, cv.COLOR_BGR2GRAY)
-        flattened = image.flatten()
+        
+        center = image.shape
+        w = center[1] * crop_size
+        h = center[0] * crop_size
+        x = center[1] / 2 - w / 2
+        y = center[0] / 2 - h / 2
+        cropped = image[int(y):int(y + h), int(x):int(x + w)]
+        
+        flattened = cropped.flatten()
         flattened_mask = ((flattened <= 30) | (flattened >= 220))
         bw_proportion = len(flattened[flattened_mask]) / len(flattened)
 
@@ -161,13 +168,6 @@ def discard_preprocessing(dir, image_names, labels, bw_threshold=0.9, no_gradien
             discarded_indices.append(i)
             continue
 
-        center = image.shape
-        w = center[1] * crop_size
-        h = center[0] * crop_size
-        x = center[1] / 2 - w / 2
-        y = center[0] / 2 - h / 2
-
-        cropped = image[int(y):int(y + h), int(x):int(x + w)]
         gradient = cv.Laplacian(cropped, 0).flatten()
         no_gradient_rate = len(gradient[abs(gradient) < 1].flatten()) / len(gradient)
         if no_gradient_rate >= no_gradient_threshold:
