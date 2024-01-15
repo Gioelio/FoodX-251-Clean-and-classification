@@ -21,6 +21,7 @@ class SearchWindow(QtWidgets.QMainWindow):
         self.slider.setMaximum(10)
         self.slider.setValue(5)
         self.slider.setTickInterval(1)
+        self.label_loading = self.findChild(QtWidgets.QLabel, 'labelLoading')
         self.grid = self.findChild(QtWidgets.QScrollArea, 'gridImages')
         self.query_img = self.findChild(QtWidgets.QLabel, 'queryImg')
 
@@ -39,11 +40,14 @@ class SearchWindow(QtWidgets.QMainWindow):
         dialog.setNameFilter("Immagini (*.jpg *.png *.jpeg *.bmp) Tutti i file (*.*)")
         if dialog.exec():
             filename = dialog.selectedFiles()[0]
+            self.label_loading.setText("Caricamento...")
+            self.repaint()
             vit_info, en_info, base_info, _ = find_similar_distances(filename, self.nn_features)
             self.vit_info = vit_info
             self.en_info = en_info
             self.base_info = base_info
             self.load_images_in_grid(filename)
+            self.label_loading.setText("")
 
     def load_images_in_grid(self, filename):
         print(filename)

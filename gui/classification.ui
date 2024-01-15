@@ -15,7 +15,7 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QFormLayout" name="formLayout">
-    <item row="1" column="0">
+    <item row="2" column="0">
      <widget class="QLabel" name="labelResults">
       <property name="text">
        <string/>
@@ -26,6 +26,19 @@
      <widget class="QPushButton" name="buttonSelect">
       <property name="text">
        <string>Seleziona un'immagine...</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QLabel" name="labelLoading">
+      <property name="minimumSize">
+       <size>
+        <width>150</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="text">
+       <string/>
       </property>
      </widget>
     </item>

@@ -33,23 +33,6 @@
       </item>
      </layout>
     </item>
-    <item row="1" column="1">
-     <widget class="QScrollArea" name="gridImages">
-      <property name="widgetResizable">
-       <bool>true</bool>
-      </property>
-      <widget class="QWidget" name="scrollAreaWidgetContents">
-       <property name="geometry">
-        <rect>
-         <x>0</x>
-         <y>0</y>
-         <width>1027</width>
-         <height>170</height>
-        </rect>
-       </property>
-      </widget>
-     </widget>
-    </item>
     <item row="1" column="0">
      <layout class="QVBoxLayout" name="verticalLayout">
       <property name="leftMargin">
@@ -84,7 +67,47 @@
         </property>
        </widget>
       </item>
+      <item>
+       <widget class="QLabel" name="labelLoading">
+        <property name="minimumSize">
+         <size>
+          <width>130</width>
+          <height>20</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="labelDescription">
+        <property name="text">
+         <string>Lo slider indica il peso da attribuire alle distanze dei vari modelli.Verso sinistra viene considerato maggiormente il modello fine-tuned sul dataset, mentre verso destra viene data più importanza alle distanze calcolate attraverso il modello pre-addestrato su ImageNet.</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
      </layout>
+    </item>
+    <item row="1" column="1">
+     <widget class="QScrollArea" name="gridImages">
+      <property name="widgetResizable">
+       <bool>true</bool>
+      </property>
+      <widget class="QWidget" name="scrollAreaWidgetContents">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>901</width>
+         <height>256</height>
+        </rect>
+       </property>
+      </widget>
+     </widget>
     </item>
    </layout>
   </widget>

@@ -22,7 +22,7 @@ def classify_image(path):
     q = brisque.BRISQUE()
     quality = q.score(image)
     if quality >= 85:
-        raise Exception("The given input image has a quality score of {0:.2f}. That's too high!".format(quality))
+        raise Exception("L'immagine ha un quality score di {0:.2f}. È troppo alto!".format(quality))
     image = image[:, :, ::-1]
     image = cv.resize(image, (224, 224))
     image = np.expand_dims(image, 0)

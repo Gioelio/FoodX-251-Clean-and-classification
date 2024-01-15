@@ -9,6 +9,7 @@ class ClassificationWindow(QtWidgets.QMainWindow):
         self.button_select = self.findChild(QtWidgets.QPushButton, 'buttonSelect')
         self.results_label = self.findChild(QtWidgets.QLabel, 'labelResults')
         self.button_select.clicked.connect(self.select_clicked)
+        self.label_loading = self.findChild(QtWidgets.QLabel, 'labelLoading')
 
     def select_clicked(self):
         dialog = QFileDialog()
@@ -16,6 +17,8 @@ class ClassificationWindow(QtWidgets.QMainWindow):
         dialog.setNameFilter("Immagini (*.jpg *.png *.jpeg *.bmp);; Tutti i file (*.*)")
         if dialog.exec():
             filename = dialog.selectedFiles()[0]
+            self.results_label.setText("Caricamento...")
+            self.repaint()
             try:
                 ordered_classes, prediction, classnames = classify_image(filename)
                 result_string = ""
